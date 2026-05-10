@@ -10,6 +10,7 @@ from typing import Any
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import streamlit as st
 
 from auth_utils import verify_password
@@ -200,72 +201,200 @@ MACRO_CHART_LABELS = {
 PLOTLY_MACRO_SECTIONS = {
     "Short Overview": [
         {
-            "title": "Inflation and Policy Rate",
-            "dataset": "Monthly",
-            "unit": "%",
-            "lines": [
-                {"column": "cpi", "label": "Inflation YoY", "transform": "yoy", "lag": 12},
-                {"column": "cpi", "label": "Inflation MoM", "transform": "pct_change", "lag": 1},
-                {"column": "rate_pol", "label": "Policy rate"},
+            "title": "Short Overview",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Real GDP growth (YoY)",
+                    "dataset": "Quarterly",
+                    "unit": "%",
+                    "lines": [{"column": "gdp", "label": "Real GDP", "transform": "yoy", "lag": 4}],
+                },
+                {
+                    "title": "Nominal GDP growth (YoY)",
+                    "dataset": "Quarterly",
+                    "unit": "%",
+                    "lines": [{"column": "gdp_nom", "label": "Nominal GDP", "transform": "yoy", "lag": 4}],
+                },
+                {
+                    "title": "MNT/USD exchange rate",
+                    "dataset": "Monthly",
+                    "lines": [{"column": "usd_mnt", "label": "USD/MNT"}],
+                },
+                {
+                    "title": "Inflation (YoY)",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [{"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12}],
+                },
             ],
         },
         {
-            "title": "Growth and Household Momentum",
-            "dataset": "Quarterly",
-            "unit": "%",
-            "lines": [
-                {"column": "gdp", "label": "GDP YoY", "transform": "yoy", "lag": 4},
-                {"column": "gdp", "label": "GDP 4Q YoY", "transform": "rolling_yoy", "window": 4, "lag": 4},
-                {"column": "hh_inc", "label": "Household income YoY", "transform": "yoy", "lag": 4},
-                {"column": "hh_exp", "label": "Household spending YoY", "transform": "yoy", "lag": 4},
+            "title": "Short Overview",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Real GDP growth (yearly)",
+                    "dataset": "Yearly",
+                    "unit": "%",
+                    "lines": [{"column": "gdp", "label": "Real GDP", "transform": "yoy", "lag": 1}],
+                },
+                {
+                    "title": "Nominal GDP growth (yearly)",
+                    "dataset": "Yearly",
+                    "unit": "%",
+                    "lines": [{"column": "gdp_nom", "label": "Nominal GDP", "transform": "yoy", "lag": 1}],
+                },
+                {
+                    "title": "MNT/USD exchange rate",
+                    "dataset": "Yearly",
+                    "lines": [
+                        {"column": "usd_mnt_avg", "label": "Mean"},
+                        {"column": "usd_mnt_last", "label": "Last"},
+                    ],
+                },
+                {
+                    "title": "Inflation (yearly)",
+                    "dataset": "Yearly",
+                    "unit": "%",
+                    "lines": [{"column": "cpi_last", "label": "Inflation", "transform": "yoy", "lag": 1}],
+                },
             ],
         },
         {
-            "title": "External Snapshot",
-            "dataset": "Monthly",
-            "lines": [
-                {"column": "usd_mnt", "label": "USD/MNT"},
-                {"column": "fx_reserve", "label": "FX reserves, bn USD", "scale": 0.001},
-                {"column": "ex_cum", "label": "Exports, bn USD", "scale": 0.001},
-                {"column": "im_cum", "label": "Imports, bn USD", "scale": 0.001},
+            "title": "Short Overview",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Credit and money supply (YoY)",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [
+                        {"column": "bank_ass_credit_nfi", "label": "Banking sector credit", "transform": "yoy", "lag": 12},
+                        {"column": "ms_m2", "label": "M2", "transform": "yoy", "lag": 12},
+                    ],
+                },
+                {
+                    "title": "Inflation and money supply (YoY)",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [
+                        {"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12},
+                        {"column": "ms_m2", "label": "M2", "transform": "yoy", "lag": 12},
+                    ],
+                },
+                {
+                    "title": "FX rate and inflation (YoY)",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [
+                        {"column": "usd_mnt", "label": "USD/MNT", "transform": "yoy", "lag": 12},
+                        {"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12},
+                    ],
+                },
+                {
+                    "title": "Inflation and policy rate",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [
+                        {"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12},
+                        {"column": "rate_pol", "label": "Policy rate"},
+                    ],
+                },
             ],
         },
     ],
     "Real Economy": [
         {
-            "title": "Real GDP Growth",
-            "dataset": "Quarterly",
-            "unit": "%",
-            "lines": [
-                {"column": "gdp", "label": "Quarter YoY", "transform": "yoy", "lag": 4},
-                {"column": "gdp", "label": "4-quarter sum YoY", "transform": "rolling_yoy", "window": 4, "lag": 4},
+            "title": "Real Economy",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Real GDP growth (YTD)",
+                    "dataset": "Quarterly",
+                    "unit": "%",
+                    "bars": [
+                        {"column": "gdp_ytd_agr_contrib", "label": "Agriculture"},
+                        {"column": "gdp_ytd_mine_contrib", "label": "Mining"},
+                        {"column": "gdp_ytd_manu_contrib", "label": "Manufacturing"},
+                        {"column": "gdp_ytd_elec_contrib", "label": "Electricity"},
+                        {"column": "gdp_ytd_cons_contrib", "label": "Construction"},
+                        {"column": "gdp_ytd_trad_contrib", "label": "Trade"},
+                        {"column": "gdp_ytd_tran_contrib", "label": "Transport"},
+                        {"column": "gdp_ytd_comm_contrib", "label": "Communication"},
+                        {"column": "gdp_ytd_serv_oth_contrib", "label": "Other services"},
+                        {"column": "gdp_ytd_tax_contrib", "label": "Net taxes"},
+                    ],
+                    "lines": [
+                        {"column": "gdp_ytd_growth", "label": "GDP growth"}
+                    ],
+                },
+                {
+                    "title": "Real GDP growth (quarter YoY)",
+                    "dataset": "Quarterly",
+                    "unit": "%",
+                    "bars": [
+                        {"column": "gdp_q_agr_contrib", "label": "Agriculture"},
+                        {"column": "gdp_q_mine_contrib", "label": "Mining"},
+                        {"column": "gdp_q_manu_contrib", "label": "Manufacturing"},
+                        {"column": "gdp_q_elec_contrib", "label": "Electricity"},
+                        {"column": "gdp_q_cons_contrib", "label": "Construction"},
+                        {"column": "gdp_q_trad_contrib", "label": "Trade"},
+                        {"column": "gdp_q_tran_contrib", "label": "Transport"},
+                        {"column": "gdp_q_comm_contrib", "label": "Communication"},
+                        {"column": "gdp_q_serv_oth_contrib", "label": "Other services"},
+                        {"column": "gdp_q_tax_contrib", "label": "Net taxes"},
+                    ],
+                    "lines": [
+                        {"column": "gdp_q_growth", "label": "GDP growth"}
+                    ],
+                },
+                {
+                    "title": "Real GDP growth (yearly)",
+                    "dataset": "Yearly",
+                    "unit": "%",
+                    "bars": [
+                        {"column": "gdp_y_agr_contrib", "label": "Agriculture"},
+                        {"column": "gdp_y_mine_contrib", "label": "Mining"},
+                        {"column": "gdp_y_manu_contrib", "label": "Manufacturing"},
+                        {"column": "gdp_y_elec_contrib", "label": "Electricity"},
+                        {"column": "gdp_y_cons_contrib", "label": "Construction"},
+                        {"column": "gdp_y_trad_contrib", "label": "Trade"},
+                        {"column": "gdp_y_tran_contrib", "label": "Transport"},
+                        {"column": "gdp_y_comm_contrib", "label": "Communication"},
+                        {"column": "gdp_y_serv_oth_contrib", "label": "Other services"},
+                        {"column": "gdp_y_tax_contrib", "label": "Net taxes"},
+                    ],
+                    "lines": [
+                        {"column": "gdp_y_growth", "label": "GDP growth"}
+                    ],
+                },
+                {
+                    "title": "Real GDP decomposition (shares)",
+                    "dataset": "Yearly",
+                    "unit": "% of GDP",
+                    "bars": [
+                        {"column": "gdp_agr_share", "label": "Agriculture"},
+                        {"column": "gdp_mine_share", "label": "Mining"},
+                        {"column": "gdp_manu_share", "label": "Manufacturing"},
+                        {"column": "gdp_elec_share", "label": "Electricity"},
+                        {"column": "gdp_cons_share", "label": "Construction"},
+                        {"column": "gdp_trad_share", "label": "Trade"},
+                        {"column": "gdp_tran_share", "label": "Transport"},
+                        {"column": "gdp_comm_share", "label": "Communication"},
+                        {"column": "gdp_serv_oth_share", "label": "Other services"},
+                        {"column": "gdp_tax_share", "label": "Net taxes"},
+                    ],
+                },
             ],
         },
         {
-            "title": "GDP Growth Contributions",
-            "dataset": "Quarterly",
-            "unit": "percentage points",
-            "bars": [
-                {"column": "gdp_agr", "label": "Agriculture", "transform": "diff_share", "denominator": "gdp", "lag": 4},
-                {"column": "gdp_mine", "label": "Mining", "transform": "diff_share", "denominator": "gdp", "lag": 4},
-                {"column": "gdp_manu", "label": "Manufacturing", "transform": "diff_share", "denominator": "gdp", "lag": 4},
-                {"column": "gdp_cons", "label": "Construction", "transform": "diff_share", "denominator": "gdp", "lag": 4},
-                {"column": "gdp_trad", "label": "Trade", "transform": "diff_share", "denominator": "gdp", "lag": 4},
-                {"column": "gdp_serv_oth", "label": "Other services", "transform": "diff_share", "denominator": "gdp", "lag": 4},
-                {"column": "gdp_tax", "label": "Net taxes", "transform": "diff_share", "denominator": "gdp", "lag": 4},
-            ],
+            "title": "Nominal GDP",
+            "dataset": "Yearly",
+            "unit": "tn MNT / bn USD",
             "lines": [
-                {"column": "gdp", "label": "GDP growth", "transform": "diff_share", "denominator": "gdp", "lag": 4}
-            ],
-        },
-        {
-            "title": "Household Income and Spending",
-            "dataset": "Quarterly",
-            "unit": "%",
-            "lines": [
-                {"column": "hh_inc", "label": "Income YoY", "transform": "yoy", "lag": 4},
-                {"column": "hh_exp", "label": "Spending YoY", "transform": "yoy", "lag": 4},
-                {"columns_sum": ["hh_inc"], "denominator": "hh_exp", "label": "Income / spending", "transform": "ratio"},
+                {"column": "gdp_nom_tn", "label": "MNT, tn"},
+                {"column": "gdp_nom_usd", "label": "USD, bn"},
             ],
         },
     ],
@@ -552,6 +681,24 @@ LABEL_OVERRIDES = {
     "hh_exp_yoy": "Household expense YoY",
 }
 
+SECTOR_COLORS = {
+    "Agriculture": "#2ca02c",
+    "Mining": "#ff7f0e",
+    "Manufacturing": "#1f77b4",
+    "Electricity": "#9467bd",
+    "Construction": "#8c564b",
+    "Trade": "#e377c2",
+    "Transport": "#7f7f7f",
+    "Communication": "#bcbd22",
+    "Other services": "#17becf",
+    "Net taxes": "#d62728",
+}
+
+LINE_COLORS = {
+    "GDP growth": "#111827",
+}
+
+
 
 def main() -> None:
     st.set_page_config(
@@ -737,6 +884,13 @@ def inject_css() -> None:
     .small-muted {
         color: #667085;
         font-size: 0.9rem;
+    }
+    div[data-testid="stDialog"] div[role="dialog"] {
+        width: min(96vw, 1500px);
+        max-width: 96vw;
+    }
+    div[data-testid="stDialog"] div[role="dialog"] > div {
+        max-height: 92vh;
     }
 </style>
 """,
@@ -1027,34 +1181,100 @@ def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
             for chart_index, chart_spec in enumerate(chart_specs):
                 if chart_index:
                     st.divider()
-                render_macro_plotly_chart(macro_data, chart_spec, windows)
+                chart_key_prefix = f"{index}_{chart_index}_{slugify(section_name)}"
+                if chart_spec.get("layout") == "2x2":
+                    render_macro_plotly_page(macro_data, chart_spec, windows, chart_key_prefix)
+                else:
+                    render_macro_plotly_chart(macro_data, chart_spec, windows, chart_key_prefix)
+
+
+def render_macro_plotly_page(
+    macro_data: dict[str, pd.DataFrame],
+    page_spec: dict[str, Any],
+    windows: dict[str, int],
+    key_prefix: str,
+) -> None:
+    charts = list(page_spec.get("charts", []))[:4]
+    if not charts:
+        return
+
+    has_chart = False
+    for row_start in range(0, len(charts), 2):
+        columns = st.columns(2)
+        for offset, chart_spec in enumerate(charts[row_start : row_start + 2]):
+            index = row_start + offset
+            with columns[offset]:
+                single = build_macro_plotly_chart_figure(
+                    macro_data,
+                    chart_spec,
+                    windows,
+                    height=410,
+                    title_size=14,
+                    legend_y=-0.34,
+                )
+                if single is None:
+                    continue
+                has_chart = True
+                fig, chart_title = single
+                render_expandable_plotly(
+                    fig,
+                    key=f"macro_plotly_page_{key_prefix}_{index}",
+                    title=chart_title,
+                    expanded_height=860,
+                    compact=True,
+                )
+
+    if not has_chart:
+        st.info(f"No available series for {page_spec.get('title', 'this page')}.")
 
 
 def render_macro_plotly_chart(
     macro_data: dict[str, pd.DataFrame],
     chart_spec: dict[str, Any],
     windows: dict[str, int],
+    key_prefix: str,
 ) -> None:
+    built = build_macro_plotly_chart_figure(macro_data, chart_spec, windows)
+    if built is None:
+        st.info(f"No available series for {chart_spec.get('title', 'this chart')}.")
+        return
+
+    fig, chart_title = built
+    chart_key = f"macro_plotly_{key_prefix}"
+    render_expandable_plotly(
+        fig,
+        key=chart_key,
+        title=chart_title,
+        expanded_height=760,
+    )
+
+
+def build_macro_plotly_chart_figure(
+    macro_data: dict[str, pd.DataFrame],
+    chart_spec: dict[str, Any],
+    windows: dict[str, int],
+    height: int = 360,
+    title_size: int = 15,
+    legend_y: float = -0.36,
+) -> tuple[go.Figure, str] | None:
     dataset_name = str(chart_spec.get("dataset", "Monthly"))
     frame = macro_data.get(dataset_name)
     if frame is None or frame.empty:
-        st.info(f"{dataset_name} data is not available.")
-        return
+        return None
 
     bars = build_chart_series(frame, chart_spec.get("bars", []))
     lines = build_chart_series(frame, chart_spec.get("lines", []))
     all_series = bars + lines
     if not all_series:
-        st.info(f"No available series for {chart_spec.get('title', 'this chart')}.")
-        return
+        return None
 
     observations = int(chart_spec.get("observations") or windows.get(dataset_name, 60))
     chart_frame = pd.concat({label: series for label, series in all_series}, axis=1)
     chart_frame = chart_frame.apply(pd.to_numeric, errors="coerce").dropna(how="all").tail(observations)
     if chart_frame.empty:
-        st.info(f"No numeric observations for {chart_spec.get('title', 'this chart')}.")
-        return
+        return None
 
+    chart_title = title_with_last_period(str(chart_spec.get("title", "")), all_series)
     x_values, x_title = chart_x_values(chart_frame.index)
     fig = go.Figure()
 
@@ -1064,6 +1284,7 @@ def render_macro_plotly_chart(
                 x=x_values,
                 y=chart_frame[label],
                 name=label,
+                marker_color=SECTOR_COLORS.get(label),
             )
         )
 
@@ -1074,26 +1295,100 @@ def render_macro_plotly_chart(
                 y=chart_frame[label],
                 name=label,
                 mode="lines",
-                line=dict(width=2.2),
+                line=dict(
+                    width=2.2,
+                    color=LINE_COLORS.get(label),
+                ),
             )
         )
 
     fig.update_layout(
-        title=dict(text=str(chart_spec.get("title", "")), font=dict(size=15)),
+        title=dict(text=chart_title, font=dict(size=title_size)),
         template="plotly_white",
-        height=360,
+        height=height,
         margin=dict(l=12, r=12, t=52, b=16),
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=-0.36, xanchor="left", x=0),
+        legend=dict(orientation="h", yanchor="bottom", y=legend_y, xanchor="left", x=0),
         barmode="relative",
     )
     fig.update_xaxes(title_text=x_title)
-    fig.update_yaxes(title_text=str(chart_spec.get("unit", "")))
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        key=f"macro_plotly_{chart_spec.get('title', '')}_{dataset_name}",
+    fig.update_yaxes(
+    title_text=str(chart_spec.get("unit", "")),
+    tickformat=".1f",
     )
+    return fig, chart_title
+
+
+def slugify(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
+    return slug or "chart"
+
+
+def render_expandable_plotly(
+    fig: go.Figure,
+    key: str,
+    title: str,
+    expanded_height: int = 820,
+    compact: bool = False,
+) -> None:
+    _spacer, expand_col = st.columns([8, 0.7] if compact else [5, 0.8])
+    with expand_col:
+        expand = st.button(
+            "↗",
+            key=f"{key}_expand",
+            help=f"Expand {title}",
+            use_container_width=True,
+        )
+
+    st.plotly_chart(fig, use_container_width=True, key=key)
+
+    if not expand:
+        return
+
+    open_plotly_dialog(fig, key=key, title=title, expanded_height=expanded_height)
+
+
+def open_plotly_dialog(
+    fig: go.Figure,
+    key: str,
+    title: str,
+    expanded_height: int,
+) -> None:
+    dialog = getattr(st, "dialog", None) or getattr(st, "experimental_dialog", None)
+    if dialog is None:
+        st.info("Use the chart toolbar to open Plotly's fullscreen view.")
+        return
+
+    @dialog(title, width="large")
+    def expanded_chart() -> None:
+        expanded_fig = go.Figure(fig)
+        expanded_fig.update_layout(height=expanded_height)
+        st.plotly_chart(expanded_fig, use_container_width=True, key=f"{key}_expanded")
+
+    expanded_chart()
+
+
+def title_with_last_period(title: str, series_items: list[tuple[str, pd.Series]]) -> str:
+    period = latest_series_period(series_items)
+    if not period:
+        return title
+    return f"{title}, last: {period}"
+
+
+def latest_series_period(series_items: list[tuple[str, pd.Series]]) -> str:
+    latest_date = None
+    latest_label = ""
+    for _label, series in series_items:
+        clean = pd.to_numeric(series, errors="coerce").dropna()
+        if clean.empty:
+            continue
+        label = str(clean.index[-1])
+        date_value = parse_period(label)
+        sort_value = date_value if not pd.isna(date_value) else pd.Timestamp.min
+        if latest_date is None or sort_value > latest_date:
+            latest_date = sort_value
+            latest_label = label
+    return latest_label
 
 
 def build_chart_series(
@@ -1115,7 +1410,7 @@ def build_chart_series(
 def transformed_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series | None:
     base = base_series(frame, series_spec)
     if base is None:
-        return None
+        return derived_real_economy_series(frame, series_spec)
 
     transform = str(series_spec.get("transform") or "level")
     lag = int(series_spec.get("lag") or 1)
@@ -1173,6 +1468,98 @@ def denominator_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.S
     if denominator not in frame.columns:
         return None
     return pd.to_numeric(frame[denominator], errors="coerce")
+
+
+def derived_real_economy_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series | None:
+    column = str(series_spec.get("column") or "")
+    if not column:
+        return None
+
+    ytd_match = re.fullmatch(r"gdp_ytd_(.+)_contrib", column)
+    if ytd_match:
+        return ytd_gdp_contribution(frame, f"gdp_{ytd_match.group(1)}")
+
+    q_match = re.fullmatch(r"gdp_q_(.+)_contrib", column)
+    if q_match:
+        return diff_share_series(frame, f"gdp_{q_match.group(1)}", "gdp", 4)
+
+    y_match = re.fullmatch(r"gdp_y_(.+)_contrib", column)
+    if y_match:
+        return diff_share_series(frame, f"gdp_{y_match.group(1)}", "gdp", 1)
+
+    share_match = re.fullmatch(r"gdp_(.+)_share", column)
+    if share_match:
+        numerator = f"gdp_{share_match.group(1)}"
+        if numerator not in frame.columns or "gdp" not in frame.columns:
+            return None
+        return pd.to_numeric(frame[numerator], errors="coerce").div(pd.to_numeric(frame["gdp"], errors="coerce")) * 100
+
+    if column == "gdp_ytd_growth":
+        return ytd_gdp_contribution(frame, "gdp")
+    if column == "gdp_q_growth":
+        return diff_share_series(frame, "gdp", "gdp", 4)
+    if column == "gdp_y_growth":
+        return diff_share_series(frame, "gdp", "gdp", 1)
+    if column == "gdp_nom_tn" and "gdp_nom" in frame.columns:
+        return pd.to_numeric(frame["gdp_nom"], errors="coerce") / 1e6
+
+    return None
+
+
+def diff_share_series(frame: pd.DataFrame, numerator: str, denominator: str, lag: int) -> pd.Series | None:
+    if numerator not in frame.columns or denominator not in frame.columns:
+        return None
+    base = pd.to_numeric(frame[numerator], errors="coerce")
+    denom = pd.to_numeric(frame[denominator], errors="coerce")
+    return base.diff(lag).div(denom.shift(lag)) * 100
+
+
+def ytd_gdp_contribution(frame: pd.DataFrame, numerator: str) -> pd.Series | None:
+    if numerator not in frame.columns or "gdp" not in frame.columns:
+        return None
+
+    period_frame = pd.DataFrame(
+        [quarter_period_parts(value) for value in frame.index],
+        index=frame.index,
+        columns=["year", "quarter"],
+    )
+    values = pd.DataFrame(
+        {
+            "numerator": pd.to_numeric(frame[numerator], errors="coerce"),
+            "gdp": pd.to_numeric(frame["gdp"], errors="coerce"),
+            "year": period_frame["year"],
+            "quarter": period_frame["quarter"],
+        },
+        index=frame.index,
+    )
+    result = pd.Series(index=frame.index, dtype="float64")
+
+    for period, row in period_frame.dropna().iterrows():
+        year = int(row["year"])
+        quarter = int(row["quarter"])
+        current_mask = (values["year"] == year) & (values["quarter"] <= quarter)
+        previous_mask = (values["year"] == year - 1) & (values["quarter"] <= quarter)
+        current_sum = values.loc[current_mask, "numerator"].sum(min_count=1)
+        previous_sum = values.loc[previous_mask, "numerator"].sum(min_count=1)
+        previous_gdp = values.loc[previous_mask, "gdp"].sum(min_count=1)
+        if pd.isna(current_sum) or pd.isna(previous_sum) or pd.isna(previous_gdp) or previous_gdp == 0:
+            continue
+        result.loc[period] = (current_sum - previous_sum) / previous_gdp * 100
+
+    return result
+
+
+def quarter_period_parts(value: Any) -> tuple[int | None, int | None]:
+    text = str(value).strip()
+    quarterly = re.fullmatch(r"(\d{2})Q([1-4])", text)
+    if quarterly:
+        return expand_two_digit_year(quarterly.group(1)), int(quarterly.group(2))
+
+    parsed = parse_period(value)
+    if pd.isna(parsed):
+        return None, None
+    timestamp = pd.Timestamp(parsed)
+    return int(timestamp.year), int((timestamp.month - 1) // 3 + 1)
 
 
 def chart_x_values(index: pd.Index) -> tuple[pd.Series | pd.Index, str]:
@@ -1311,7 +1698,12 @@ def render_line_chart(
     )
     fig.update_xaxes(title_text="")
     fig.update_yaxes(title_text="")
-    st.plotly_chart(fig, use_container_width=True, key=f"chart_{key}")
+    render_expandable_plotly(
+        fig,
+        key=f"chart_{key}",
+        title=str(key),
+        expanded_height=760,
+    )
 
 
 def index_to_datetime(index: pd.Index) -> pd.Series:
@@ -1450,7 +1842,12 @@ def render_forecast_section() -> None:
     )
     fig.update_xaxes(title_text="")
     fig.update_yaxes(title_text="Forecast value")
-    st.plotly_chart(fig, use_container_width=True, key=f"forecast_chart_{scenario}")
+    render_expandable_plotly(
+        fig,
+        key=f"forecast_chart_{scenario}",
+        title=f"{scenario} forecast",
+        expanded_height=760,
+    )
 
     st.markdown("#### Forecast Reports")
     forecast_reports = [

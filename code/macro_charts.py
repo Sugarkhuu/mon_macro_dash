@@ -198,6 +198,36 @@ gdp_comp_diff_rel_all_y = gdp_comp_all_y.diff(periods=1).div(dy.gdp.shift(1), ax
 gdp_comp_diff_rel_y     = gdp_comp_diff_rel_all_y.iloc[:,:-1]
 gdp_comp_diff_rel_tot_y = gdp_comp_diff_rel_all_y.iloc[:,-1]
 
+for sector in gdp_list:
+       dq['gdp_q_' + sector + '_contrib'] = gdp_comp_diff_rel['gdp_' + sector]
+       dy['gdp_y_' + sector + '_contrib'] = gdp_comp_diff_rel_y['gdp_' + sector]
+       dy['gdp_' + sector + '_share'] = dy['gdp_' + sector].div(dy['gdp'])*100
+
+dq['gdp_q_growth'] = gdp_comp_diff_rel_tot
+dy['gdp_y_growth'] = gdp_comp_diff_rel_tot_y
+dy['gdp_nom_tn'] = dy['gdp_nom']/1e6
+
+gdp_ytd_source = dq[['gdp'] + ['gdp_' + sector for sector in gdp_list]].copy()
+gdp_ytd_source['year'] = [int(str(index_value)[:2]) for index_value in gdp_ytd_source.index]
+gdp_ytd_source['quarter'] = [int(str(index_value)[-1]) for index_value in gdp_ytd_source.index]
+
+for index_value, row in gdp_ytd_source.iterrows():
+       year = row['year']
+       quarter = row['quarter']
+       current_mask = (gdp_ytd_source['year'] == year) & (gdp_ytd_source['quarter'] <= quarter)
+       previous_mask = (gdp_ytd_source['year'] == year - 1) & (gdp_ytd_source['quarter'] <= quarter)
+       previous_gdp = gdp_ytd_source.loc[previous_mask, 'gdp'].sum(min_count=1)
+       if pd.isna(previous_gdp) or previous_gdp == 0:
+              continue
+       for sector in gdp_list:
+              column = 'gdp_' + sector
+              current_value = gdp_ytd_source.loc[current_mask, column].sum(min_count=1)
+              previous_value = gdp_ytd_source.loc[previous_mask, column].sum(min_count=1)
+              dq.loc[index_value, 'gdp_ytd_' + sector + '_contrib'] = (current_value - previous_value)/previous_gdp*100
+       current_gdp = gdp_ytd_source.loc[current_mask, 'gdp'].sum(min_count=1)
+       previous_gdp_sum = gdp_ytd_source.loc[previous_mask, 'gdp'].sum(min_count=1)
+       dq.loc[index_value, 'gdp_ytd_growth'] = (current_gdp - previous_gdp_sum)/previous_gdp*100
+
 
 dy["usd_mnt_last"] = convert(dm["usd_mnt"],'y','last')
 dy["usd_mnt_avg"] = convert(dm["usd_mnt"],'y','average')
