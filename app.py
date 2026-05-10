@@ -13,6 +13,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
+from tensorboard import summary
+from tensorboard import summary
 
 from auth_utils import verify_password
 
@@ -526,6 +528,29 @@ PLOTLY_MACRO_SECTIONS = {
         },
     ],
 }
+
+
+SECTION_SUMMARIES = {
+    "Real Economy": """
+Mining growth continued to be driven by coal and copper production,
+while agriculture recovered further following the severe dzud-related
+weakness in previous years. Real GDP growth reached 6.8% in 2025.
+Nominal GDP increased to USD 25.4 bn, equivalent to MNT 89.9 tn.
+""",
+
+    "Inflation and Prices": """
+Inflation pressures remain elevated, especially in food and selected
+service categories. Monthly momentum has eased somewhat, but underlying
+price dynamics are still above historical averages.
+""",
+
+    "Exchange Rate": """
+The exchange rate has remained relatively stable despite external
+volatility. FX dynamics continue to play an important role in imported
+inflation and reserve accumulation.
+""",
+}
+
 
 DATASET_DEFAULTS = {
     "Monthly": ["cpi", "usd_mnt", "rate_pol", "ms_m2", "bank_ass_credit_nfi"],
@@ -1093,6 +1118,23 @@ def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
             section_name.upper(),
             expanded=expand_all or index == 0,
         ):
+            summary = SECTION_SUMMARIES.get(section_name)
+            if summary:
+                st.markdown(
+                    f"""
+                    <div style="
+                        font-size: 5rem;
+                        line-height: 1.6;
+                        color: #425466;
+                        margin-bottom: 1rem;
+                        padding-left: 0.1rem;
+                    ">
+                        {summary}
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+    
             for chart_index, chart_spec in enumerate(chart_specs):
                 if chart_index:
                     st.divider()
