@@ -17,7 +17,6 @@ from auth_utils import verify_password
 
 ROOT = Path(__file__).resolve().parent
 DATA_PICKLE = ROOT / "data" / "macro_data.pickle"
-MAIN_INDICATORS = ROOT / "main_indicators.xlsx"
 FIGURE_DIR = ROOT / "figures"
 REPORT_DIRS = [ROOT / "output", ROOT / "report" / "table"]
 ANALYSIS_FORECAST_DIR = ROOT / "analysis_forecast"
@@ -565,10 +564,10 @@ def main() -> None:
     user = require_login()
 
     macro_data = load_macro_data(str(DATA_PICKLE), file_mtime(DATA_PICKLE))
-    indicators = load_indicator_workbook(str(MAIN_INDICATORS), file_mtime(MAIN_INDICATORS))
-
-    monthly_ts = indicator_timeseries(indicators.get("m"))
-    quarterly_ts = indicator_timeseries(indicators.get("q"))
+    indicator_frames = build_indicator_frames(macro_data)
+    monthly_ts = indicator_frames.get("m", pd.DataFrame())
+    quarterly_ts = indicator_frames.get("q", pd.DataFrame())
+    indicator_tables = build_indicator_tables(monthly_ts, quarterly_ts)
 
     render_header(macro_data, monthly_ts, quarterly_ts, user)
 
@@ -589,7 +588,7 @@ def main() -> None:
         render_data_explorer(macro_data)
 
     with archive_tab:
-        render_archive(indicators)
+        render_archive(indicator_tables)
 
 
 def require_login() -> dict[str, str]:
@@ -766,31 +765,161 @@ def load_macro_data(path: str, _mtime: float) -> dict[str, pd.DataFrame]:
     }
 
 
-@st.cache_data(show_spinner=False)
-def load_indicator_workbook(path: str, _mtime: float) -> dict[str, pd.DataFrame]:
-    workbook = Path(path)
-    if not workbook.exists():
-        return {}
-
-    sheets: dict[str, pd.DataFrame] = {}
-    excel_file = pd.ExcelFile(workbook)
-    for sheet_name in ("m", "q"):
-        if sheet_name in excel_file.sheet_names:
-            frame = pd.read_excel(workbook, sheet_name=sheet_name, index_col=0)
-            frame = frame.apply(pd.to_numeric, errors="coerce")
-            frame.index = frame.index.astype(str)
-            frame.columns = frame.columns.astype(str)
-            sheets[sheet_name] = frame
-    return sheets
+def build_indicator_frames(macro_data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
+    monthly = build_monthly_indicator_frame(
+        macro_data.get("Monthly", pd.DataFrame()),
+        macro_data.get("Quarterly", pd.DataFrame()),
+    )
+    quarterly = build_quarterly_indicator_frame(macro_data.get("Quarterly", pd.DataFrame()))
+    return {"m": monthly, "q": quarterly}
 
 
-def indicator_timeseries(indicator_frame: pd.DataFrame | None) -> pd.DataFrame:
-    if indicator_frame is None or indicator_frame.empty:
+def build_monthly_indicator_frame(dm: pd.DataFrame, dq: pd.DataFrame) -> pd.DataFrame:
+    if dm is None or dm.empty:
         return pd.DataFrame()
 
-    frame = indicator_frame.transpose()
-    frame.index = frame.index.astype(str)
+    frame = pd.DataFrame(index=dm.index.astype(str))
+    add_existing_columns(
+        frame,
+        dm,
+        [
+            "cpi",
+            "usd_mnt",
+            "cny_mnt",
+            "rate_pol",
+            "rate_loan_mnt_new",
+            "rate_timedepo_mnt_new",
+            "ex_coal_p",
+        ],
+    )
+
+    if "cpi" in dm:
+        frame["cpi_yoy"] = pct_change(dm["cpi"], 12)
+        frame["cpi_qoq"] = pct_change(dm["cpi"], 3) * 4
+        frame["cpi_mom"] = pct_change(dm["cpi"], 1)
+
+    for currency in ("usd_mnt", "cny_mnt"):
+        if currency in dm:
+            frame[f"{currency}_yoy"] = pct_change(dm[currency], 12)
+            frame[f"{currency}_qoq"] = pct_change(dm[currency], 3) * 4
+            frame[f"{currency}_mom"] = pct_change(dm[currency], 1)
+
+    for column in ("ms_m2", "bank_ass_credit_nfi", "dc_loan_ind", "dc_loan_corp"):
+        if column in dm:
+            frame[column] = pd.to_numeric(dm[column], errors="coerce") / 1e6
+            frame[f"{column}_yoy"] = pct_change(dm[column], 12)
+            frame[f"{column}_qoq"] = pct_change(dm[column], 3) * 4
+            frame[f"{column}_mom"] = pct_change(dm[column], 1)
+
+    gdp_nom_y = monthly_gdp_nom_y(dq, frame.index)
+    if gdp_nom_y is not None:
+        if "ms_m2" in dm:
+            frame["m2_gdp"] = pd.to_numeric(dm["ms_m2"], errors="coerce").reindex(frame.index).div(gdp_nom_y) * 100
+        if "bank_ass_credit_nfi" in dm:
+            frame["loan_gdp"] = pd.to_numeric(dm["bank_ass_credit_nfi"], errors="coerce").reindex(frame.index).div(gdp_nom_y) * 100
+        if "dc_loan_ind" in dm:
+            frame["loan_ind_gdp"] = pd.to_numeric(dm["dc_loan_ind"], errors="coerce").reindex(frame.index).div(gdp_nom_y) * 100
+        if "dc_loan_corp" in dm:
+            frame["loan_corp_gdp"] = pd.to_numeric(dm["dc_loan_corp"], errors="coerce").reindex(frame.index).div(gdp_nom_y) * 100
+        if "gov_rev_cum" in dm:
+            frame["rev_gdp"] = pd.to_numeric(dm["gov_rev_cum"], errors="coerce").reindex(frame.index).div(gdp_nom_y) * 100
+        if "gov_exp_cum" in dm:
+            frame["exp_gdp"] = pd.to_numeric(dm["gov_exp_cum"], errors="coerce").reindex(frame.index).div(gdp_nom_y) * 100
+        if "ex_cum" in dm and "usd_mnt" in dm:
+            frame["ex_gdp"] = (
+                pd.to_numeric(dm["ex_cum"], errors="coerce")
+                .mul(pd.to_numeric(dm["usd_mnt"], errors="coerce"))
+                .reindex(frame.index)
+                .div(gdp_nom_y)
+                * 100
+            )
+        if "im_cum" in dm and "usd_mnt" in dm:
+            frame["im_gdp"] = (
+                pd.to_numeric(dm["im_cum"], errors="coerce")
+                .mul(pd.to_numeric(dm["usd_mnt"], errors="coerce"))
+                .reindex(frame.index)
+                .div(gdp_nom_y)
+                * 100
+            )
+
+    for column in ("gov_rev_cum", "gov_exp_cum"):
+        if column in dm:
+            frame[column] = pd.to_numeric(dm[column], errors="coerce") / 1e6
+            frame[f"{column}_yoy"] = pct_change(dm[column], 12)
+
+    for column in ("ex_cum", "im_cum"):
+        if column in dm:
+            frame[column] = pd.to_numeric(dm[column], errors="coerce") / 1e3
+            frame[f"{column}_yoy"] = pct_change(dm[column], 12)
+
+    if "fx_reserve" in dm:
+        frame["fx_reserve"] = pd.to_numeric(dm["fx_reserve"], errors="coerce") / 1e3
+    if "ex_coal_vol_cum" in dm:
+        frame["ex_coal_vol_cum"] = pd.to_numeric(dm["ex_coal_vol_cum"], errors="coerce") / 1e3
+    if "ex_coal_cum" in dm:
+        frame["ex_coal_cum"] = pd.to_numeric(dm["ex_coal_cum"], errors="coerce") / 1e6
+
     return frame.apply(pd.to_numeric, errors="coerce")
+
+
+def build_quarterly_indicator_frame(dq: pd.DataFrame) -> pd.DataFrame:
+    if dq is None or dq.empty:
+        return pd.DataFrame()
+
+    frame = pd.DataFrame(index=dq.index.astype(str))
+    if "gdp" in dq:
+        gdp = pd.to_numeric(dq["gdp"], errors="coerce")
+        frame["gdp_q1"] = pct_change(gdp, 4)
+        frame["gdp_q2"] = pct_change(gdp.rolling(window=2, min_periods=1).sum(), 4)
+        frame["gdp_q3"] = pct_change(gdp.rolling(window=3, min_periods=1).sum(), 4)
+        frame["gdp_q4"] = pct_change(gdp.rolling(window=4, min_periods=1).sum(), 4)
+
+    add_existing_columns(frame, dq, ["hh_inc", "hh_exp"])
+    if "hh_inc" in dq and "hh_exp" in dq:
+        frame["hh_exp_inc"] = pd.to_numeric(dq["hh_inc"], errors="coerce").div(pd.to_numeric(dq["hh_exp"], errors="coerce")) * 100
+        frame["hh_inc_yoy"] = pct_change(dq["hh_inc"], 4)
+        frame["hh_exp_yoy"] = pct_change(dq["hh_exp"], 4)
+
+    return frame.apply(pd.to_numeric, errors="coerce")
+
+
+def build_indicator_tables(monthly_ts: pd.DataFrame, quarterly_ts: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    tables: dict[str, pd.DataFrame] = {}
+    if not monthly_ts.empty:
+        tables["m"] = monthly_ts.tail(50).transpose()
+    if not quarterly_ts.empty:
+        tables["q"] = quarterly_ts.tail(18).transpose()
+    return tables
+
+
+def add_existing_columns(target: pd.DataFrame, source: pd.DataFrame, columns: list[str]) -> None:
+    for column in columns:
+        if column in source:
+            target[column] = pd.to_numeric(source[column], errors="coerce")
+
+
+def pct_change(series: pd.Series, lag: int) -> pd.Series:
+    return pd.to_numeric(series, errors="coerce").pct_change(lag, fill_method=None) * 100
+
+
+def monthly_gdp_nom_y(dq: pd.DataFrame, monthly_index: pd.Index) -> pd.Series | None:
+    if dq is None or dq.empty or "gdp_nom" not in dq:
+        return None
+
+    gdp_nom = pd.to_numeric(dq["gdp_nom"], errors="coerce").dropna()
+    if gdp_nom.empty:
+        return None
+
+    parsed_quarters = [parse_period(index_value) for index_value in gdp_nom.index]
+    if any(pd.isna(value) for value in parsed_quarters):
+        return None
+
+    quarterly = pd.Series(gdp_nom.values, index=pd.DatetimeIndex(parsed_quarters)).sort_index()
+    monthly = quarterly.resample("M").ffill() / 3
+    monthly_periods = monthly.index.year.astype(str).str[-2:] + "M" + monthly.index.month.astype(str).str.zfill(2)
+    monthly.index = monthly_periods
+    monthly = monthly.reindex(monthly_index).ffill()
+    return monthly.rolling(window=12, min_periods=12).sum()
 
 
 def render_header(
@@ -842,7 +971,7 @@ def render_overview(
     quarterly_ts: pd.DataFrame,
 ) -> None:
     if monthly_ts.empty and quarterly_ts.empty:
-        st.warning("No indicator workbook found. Run `code/process_data.py` and `code/macro_table.py` first.")
+        st.warning("No derived indicators found. Run `code/macro_charts.py` to rebuild `data/macro_data.pickle`.")
         return
 
     if not monthly_ts.empty:
@@ -1234,7 +1363,7 @@ def expand_two_digit_year(value: str) -> int:
 
 def render_indicator_tables(indicators: dict[str, pd.DataFrame]) -> None:
     if not indicators:
-        st.warning("No `main_indicators.xlsx` workbook found.")
+        st.warning("No derived indicator tables are available from the macro data pickle.")
         return
 
     for sheet_name, title in (("m", "Monthly Indicators"), ("q", "Quarterly Indicators")):
@@ -1251,15 +1380,6 @@ def render_indicator_tables(indicators: dict[str, pd.DataFrame]) -> None:
             file_name=f"{sheet_name}_indicators.csv",
             mime="text/csv",
         )
-
-    if MAIN_INDICATORS.exists():
-        st.download_button(
-            "Download main_indicators.xlsx",
-            MAIN_INDICATORS.read_bytes(),
-            file_name="main_indicators.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-
 
 def render_updates_section() -> None:
     st.subheader("Macroeconomic Updates")

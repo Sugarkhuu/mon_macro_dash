@@ -4,7 +4,7 @@
 # FX and BOP, Trade and Gov
 # Credit growth, MS, inflation, FX, GDP, Interest rate
 
-name_date = '2025M11'
+name_date = '2026M03'
 
 import os
 import pandas as pd
@@ -355,9 +355,90 @@ for ind in exp_list + im_list:
 for ind in trade_list:
      dq[ind] = convert(dm[ind].copy(),'q')
 
+tmp = dq.gdp_nom.copy()
+tmp.index = pd.period_range(start='2000Q1', periods=len(tmp), freq='Q')
+tmp2 = tmp.resample('M').ffill()/3
+dm['gdp_nom'] = np.nan
+dm.loc['00M01':'25M12','gdp_nom'] = tmp2.values
+dm['gdp_nom_y'] = dm['gdp_nom'].rolling(window=12, min_periods=12).sum()
+
+
+# Inflation
+dm['cpi_yoy'] = pct(dm.cpi,-12)
+dm['cpi_qoq'] = pct(dm.cpi,-3)*4
+dm['cpi_mom'] = pct(dm.cpi,-1)
+
+# FX
+dm['usd_mnt_yoy'] = pct(dm.usd_mnt,-12)
+dm['usd_mnt_qoq'] = pct(dm.usd_mnt,-3)*4
+dm['usd_mnt_mom'] = pct(dm.usd_mnt,-1)
+dm['cny_mnt_yoy'] = pct(dm.cny_mnt,-12)
+dm['cny_mnt_qoq'] = pct(dm.cny_mnt,-3)*4
+dm['cny_mnt_mom'] = pct(dm.cny_mnt,-1)
+
+# Money supply
+dm['ms_m2_yoy'] = pct(dm.ms_m2,-12)
+dm['ms_m2_qoq'] = pct(dm.ms_m2,-3)*4
+dm['ms_m2_mom'] = pct(dm.ms_m2,-1)
+dm['m2_gdp'] = dm['ms_m2']/dm['gdp_nom_y']*100
+dm['ms_m2'] = dm['ms_m2']/1e6
+
+# Loan
+dm['bank_ass_credit_nfi'] = dm.bank_ass_credit_nfi/1e6
+dm['bank_ass_credit_nfi_yoy'] = pct(dm.bank_ass_credit_nfi,-12)
+dm['bank_ass_credit_nfi_qoq'] = pct(dm.bank_ass_credit_nfi,-3)*4
+dm['bank_ass_credit_nfi_mom'] = pct(dm.bank_ass_credit_nfi,-1)
+dm['loan_gdp'] = dm['bank_ass_credit_nfi']/dm['gdp_nom_y']*100
+
+dm['dc_loan_ind'] = dm.dc_loan_ind/1e6
+dm['dc_loan_ind_yoy'] = pct(dm.dc_loan_ind,-12)
+dm['dc_loan_ind_qoq'] = pct(dm.dc_loan_ind,-3)*4
+dm['dc_loan_ind_mom'] = pct(dm.dc_loan_ind,-1)
+dm['loan_ind_gdp'] = dm['dc_loan_ind']/dm['gdp_nom_y']*100
+
+dm['dc_loan_corp'] = dm.dc_loan_corp/1e6
+dm['dc_loan_corp_yoy'] = pct(dm.dc_loan_corp,-12)
+dm['dc_loan_corp_qoq'] = pct(dm.dc_loan_corp,-3)*4
+dm['dc_loan_corp_mom'] = pct(dm.dc_loan_corp,-1)
+dm['loan_corp_gdp'] = dm['dc_loan_corp']/dm['gdp_nom_y']*100
+
+# GDP
+dq['gdp_q1'] = pct(dq.gdp,-4)
+dq['gdp_q2'] = pct(dq['gdp'].rolling(window=2, min_periods=1).sum(),-4)
+dq['gdp_q3'] = pct(dq['gdp'].rolling(window=3, min_periods=1).sum(),-4)
+dq['gdp_q4'] = pct(dq['gdp'].rolling(window=4, min_periods=1).sum(),-4)
+
+# Budget 
+dm['gov_rev_cum_yoy'] = pct(dm.gov_rev_cum,-12)
+dm['gov_exp_cum_yoy'] = pct(dm.gov_exp_cum,-12)
+dm['rev_gdp'] = dm['gov_rev_cum']/dm['gdp_nom_y']*100
+dm['exp_gdp'] = dm['gov_exp_cum']/dm['gdp_nom_y']*100
+dm['gov_rev_cum'] = dm['gov_rev_cum']/1e6
+dm['gov_exp_cum'] = dm['gov_exp_cum']/1e6
+
+# Trade
+dm['ex_cum_yoy'] = pct(dm.ex_cum,-12)
+dm['im_cum_yoy'] = pct(dm.im_cum,-12)
+dm['ex_gdp'] = dm['ex_cum']*dm['usd_mnt']/dm['gdp_nom_y']*100
+dm['im_gdp'] = dm['im_cum']*dm['usd_mnt']/dm['gdp_nom_y']*100
+dm['ex_cum'] = dm['ex_cum']/1e3
+dm['im_cum'] = dm['im_cum']/1e3
+dm['fx_reserve'] = dm['fx_reserve']/1e3
+
+# Household finance
+dq['hh_exp_inc'] = dq.hh_inc/dq.hh_exp*100
+dq['hh_inc_yoy'] = pct(dq.hh_inc,-4)
+dq['hh_exp_yoy'] = pct(dq.hh_exp,-4)
+
+dm['ex_coal_vol_cum'] = dm['ex_coal_vol_cum']/1e3
+dm['ex_coal_cum'] = dm['ex_coal_cum']/1e6
+
+
 # Save the data file
 macro_data = [dd,dm,dq,dy]
 pickle.dump(macro_data, file = open("./data/macro_data.pickle", "wb"))
+
+
 
 
 ### Reporting section
