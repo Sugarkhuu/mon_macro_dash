@@ -20,6 +20,10 @@ DATA_PICKLE = ROOT / "data" / "macro_data.pickle"
 MAIN_INDICATORS = ROOT / "main_indicators.xlsx"
 FIGURE_DIR = ROOT / "figures"
 REPORT_DIRS = [ROOT / "output", ROOT / "report" / "table"]
+ANALYSIS_FORECAST_DIR = ROOT / "analysis_forecast"
+FORECAST_REPORT_DIR = ANALYSIS_FORECAST_DIR / "reports"
+HISTORICAL_FORECAST_DIR = ANALYSIS_FORECAST_DIR / "historical_forecasts"
+FORECAST_DATABASE_DIR = ANALYSIS_FORECAST_DIR / "database"
 
 
 MONTHLY_METRICS = [
@@ -37,6 +41,72 @@ QUARTERLY_METRICS = [
     ("hh_exp_yoy", "Household Spending YoY", "%", "pp"),
     ("hh_exp_inc", "Income / Expense", "%", "pp"),
 ]
+
+SAMPLE_ANALYSIS = {
+    "2026M04": {
+        "title": "April 2026 Macro Update",
+        "date": "2026-05-10",
+        "summary": "Inflation pressure picked up in April while external buffers remained adequate. Domestic demand indicators are still firm, but credit growth and food prices point to a less comfortable near-term inflation path.",
+        "bullets": [
+            "Headline CPI rose sharply in April, with food, transport, and insurance-related prices contributing to the monthly increase.",
+            "The exchange rate remained broadly stable compared with the previous update, helping contain imported inflation outside volatile categories.",
+            "Credit growth is still running above nominal GDP momentum, so financial conditions remain supportive for domestic demand.",
+            "Fiscal execution should be watched closely as revenue growth normalizes and expenditure pressures remain visible.",
+        ],
+        "risks": [
+            "Food price persistence could keep inflation expectations elevated.",
+            "Commodity export volumes remain a key upside risk for growth and reserves.",
+            "A faster credit cycle could complicate disinflation even if external conditions stay benign.",
+        ],
+    },
+    "2026M03": {
+        "title": "March 2026 Macro Update",
+        "date": "2026-04-15",
+        "summary": "Growth momentum stayed resilient in March, supported by trade and household income, while inflation was still above the comfort zone but less broad-based than earlier in the year.",
+        "bullets": [
+            "Real activity indicators were consistent with steady quarterly growth.",
+            "FX reserves provided a useful buffer against external volatility.",
+            "Loan growth remained concentrated in household and corporate segments sensitive to domestic demand.",
+        ],
+        "risks": [
+            "External demand for key exports could soften.",
+            "Inflation may become sticky if wage gains continue to outrun productivity.",
+        ],
+    },
+}
+
+SAMPLE_FORECASTS = {
+    "Baseline": {
+        "narrative": "The baseline assumes export volumes remain solid, policy rates decline only gradually, and inflation eases after the April food-price shock fades. Growth moderates toward potential while reserves remain broadly stable.",
+        "table": [
+            {"Indicator": "Real GDP growth", "2026": 5.8, "2027": 5.4, "2028": 5.2, "Unit": "%"},
+            {"Indicator": "CPI inflation, eop", "2026": 7.9, "2027": 6.4, "2028": 5.8, "Unit": "%"},
+            {"Indicator": "Policy rate, eop", "2026": 11.0, "2027": 9.5, "2028": 8.5, "Unit": "%"},
+            {"Indicator": "Current account balance", "2026": -7.2, "2027": -6.5, "2028": -6.1, "Unit": "% GDP"},
+            {"Indicator": "FX reserves", "2026": 5.9, "2027": 6.2, "2028": 6.5, "Unit": "bn USD"},
+        ],
+    },
+    "Upside": {
+        "narrative": "The upside scenario assumes stronger coal and copper exports, smoother food supply, and faster confidence recovery. Inflation falls earlier, creating room for easier financial conditions without destabilizing the currency.",
+        "table": [
+            {"Indicator": "Real GDP growth", "2026": 6.7, "2027": 6.1, "2028": 5.8, "Unit": "%"},
+            {"Indicator": "CPI inflation, eop", "2026": 7.1, "2027": 5.6, "2028": 5.2, "Unit": "%"},
+            {"Indicator": "Policy rate, eop", "2026": 10.5, "2027": 8.75, "2028": 8.0, "Unit": "%"},
+            {"Indicator": "Current account balance", "2026": -5.9, "2027": -5.3, "2028": -5.0, "Unit": "% GDP"},
+            {"Indicator": "FX reserves", "2026": 6.3, "2027": 6.9, "2028": 7.4, "Unit": "bn USD"},
+        ],
+    },
+    "Downside": {
+        "narrative": "The downside scenario combines weaker commodity demand, stickier food inflation, and tighter financial conditions. Growth slows, reserves are used more actively, and policy easing is delayed.",
+        "table": [
+            {"Indicator": "Real GDP growth", "2026": 4.6, "2027": 4.8, "2028": 5.0, "Unit": "%"},
+            {"Indicator": "CPI inflation, eop", "2026": 9.4, "2027": 7.8, "2028": 6.6, "Unit": "%"},
+            {"Indicator": "Policy rate, eop", "2026": 12.5, "2027": 11.0, "2028": 9.75, "Unit": "%"},
+            {"Indicator": "Current account balance", "2026": -8.8, "2027": -8.0, "2028": -7.2, "Unit": "% GDP"},
+            {"Indicator": "FX reserves", "2026": 5.3, "2027": 5.1, "2028": 5.4, "Unit": "bn USD"},
+        ],
+    },
+}
 
 MONTHLY_CHARTS = {
     "Prices": ["cpi_yoy", "cpi_qoq", "cpi_mom"],
@@ -514,21 +584,24 @@ def main() -> None:
 
     render_header(macro_data, monthly_ts, quarterly_ts)
 
-    overview_tab, table_tab, explorer_tab, report_tab = st.tabs(
-        ["Overview", "Indicator Tables", "Data Explorer", "Reports"]
+    overview_tab, updates_tab, forecast_tab, explorer_tab, archive_tab = st.tabs(
+        ["Overview", "Updates", "Forecasts", "Data Explorer", "Archive"]
     )
 
     with overview_tab:
         render_overview(macro_data, monthly_ts, quarterly_ts)
 
-    with table_tab:
-        render_indicator_tables(indicators)
+    with updates_tab:
+        render_updates_section()
+
+    with forecast_tab:
+        render_forecast_section()
 
     with explorer_tab:
         render_data_explorer(macro_data)
 
-    with report_tab:
-        render_reports()
+    with archive_tab:
+        render_archive(indicators)
 
 
 def require_login() -> dict[str, str]:
@@ -1183,6 +1256,91 @@ def render_indicator_tables(indicators: dict[str, pd.DataFrame]) -> None:
         )
 
 
+def render_updates_section() -> None:
+    st.subheader("Macroeconomic Updates")
+    selected_period = st.selectbox(
+        "Update",
+        list(SAMPLE_ANALYSIS),
+        format_func=lambda period: f"{period} - {SAMPLE_ANALYSIS[period]['title']}",
+    )
+    analysis = SAMPLE_ANALYSIS[selected_period]
+
+    st.caption(f"Published {analysis['date']}")
+    st.markdown(f"### {analysis['title']}")
+    st.write(analysis["summary"])
+
+    left, right = st.columns([1.15, 0.85])
+    with left:
+        st.markdown("#### Key Messages")
+        for item in analysis["bullets"]:
+            st.markdown(f"- {item}")
+
+    with right:
+        st.markdown("#### Watchlist")
+        for item in analysis["risks"]:
+            st.markdown(f"- {item}")
+
+    st.markdown("#### Supporting Reports")
+    analysis_reports = [
+        FORECAST_REPORT_DIR / "Data report.pdf",
+        FORECAST_REPORT_DIR / "Filtered History.pdf",
+        FORECAST_REPORT_DIR / "Shocks Decomposition.pdf",
+        FORECAST_REPORT_DIR / "Model.pdf",
+    ]
+    render_download_list(
+        [path for path in analysis_reports if path.exists()],
+        empty_message="No analysis support reports found.",
+        key_prefix="analysis_report",
+    )
+
+
+def render_forecast_section() -> None:
+    st.subheader("Forecasts")
+    scenario = st.radio(
+        "Scenario",
+        list(SAMPLE_FORECASTS),
+        index=list(SAMPLE_FORECASTS).index("Baseline"),
+        horizontal=True,
+    )
+    scenario = scenario or "Baseline"
+    forecast = SAMPLE_FORECASTS[scenario]
+
+    st.write(forecast["narrative"])
+    forecast_table = pd.DataFrame(forecast["table"])
+    st.dataframe(forecast_table, use_container_width=True, hide_index=True)
+
+    chart_frame = forecast_table.set_index("Indicator")[["2026", "2027", "2028"]].transpose()
+    fig = px.line(
+        chart_frame,
+        x=chart_frame.index,
+        y=chart_frame.columns,
+        markers=True,
+        template="plotly_white",
+        height=360,
+    )
+    fig.update_layout(
+        legend_title_text="",
+        margin=dict(l=12, r=12, t=20, b=12),
+        hovermode="x unified",
+    )
+    fig.update_xaxes(title_text="")
+    fig.update_yaxes(title_text="Forecast value")
+    st.plotly_chart(fig, use_container_width=True, key=f"forecast_chart_{scenario}")
+
+    st.markdown("#### Forecast Reports")
+    forecast_reports = [
+        FORECAST_REPORT_DIR / "forecast_base_2603.pdf",
+        FORECAST_REPORT_DIR / "forecast_alt.pdf",
+        FORECAST_REPORT_DIR / "forecast_compare.pdf",
+        FORECAST_REPORT_DIR / "back_test.pdf",
+    ]
+    render_download_list(
+        [path for path in forecast_reports if path.exists()],
+        empty_message="No forecast reports found.",
+        key_prefix="forecast_report",
+    )
+
+
 def render_data_explorer(macro_data: dict[str, pd.DataFrame]) -> None:
     if not macro_data:
         st.warning("No macro data pickle found.")
@@ -1245,41 +1403,67 @@ def transform_frame(frame: pd.DataFrame, dataset: str, transform: str) -> pd.Dat
     return numeric
 
 
-def render_reports() -> None:
+def render_archive(indicators: dict[str, pd.DataFrame]) -> None:
+    st.subheader("Archive")
+
     report_files = find_files(REPORT_DIRS, ("*.pdf", "*.xlsx"))
+    forecast_reports = find_files([FORECAST_REPORT_DIR], ("*.pdf",))
+    historical_models = find_files([HISTORICAL_FORECAST_DIR, FORECAST_DATABASE_DIR], ("*.mat", "*.csv"))
     figure_files = find_files([FIGURE_DIR], ("*.png", "*.jpg", "*.jpeg"))
 
-    report_col, figure_col = st.columns([1, 1.25])
+    report_tab, forecast_tab, figure_tab, data_tab = st.tabs(
+        ["Macro Reports", "Forecast Archive", "Chart Images", "Data Downloads"]
+    )
 
-    with report_col:
-        st.subheader("Report Files")
-        if not report_files:
-            st.info("No reports found.")
-        for path in report_files[:12]:
-            label = f"{path.name} ({path.stat().st_size / 1024:,.0f} KB)"
-            st.download_button(
-                label,
-                path.read_bytes(),
-                file_name=path.name,
-                mime=mime_for(path),
-                use_container_width=True,
-            )
+    with report_tab:
+        render_download_list(report_files, "No macro reports found.", "archive_macro_report")
 
-    with figure_col:
-        st.subheader("Figure Gallery")
+    with forecast_tab:
+        st.markdown("#### Historical Forecast Reports")
+        historical_pdf = [
+            path
+            for path in forecast_reports
+            if re.search(r"forecast_(21|22|23|24|base|alt|compare)", path.name, re.IGNORECASE)
+        ]
+        render_download_list(historical_pdf, "No historical forecast PDFs found.", "archive_forecast_pdf")
+
+        st.markdown("#### Forecast Model Files")
+        render_download_list(historical_models, "No historical forecast data files found.", "archive_forecast_model")
+
+    with figure_tab:
+        st.markdown("#### Static Report Chart Gallery")
         if not figure_files:
             st.info("No figures found.")
-            return
+        else:
+            names = [path.name for path in figure_files]
+            selected_name = st.selectbox("Figure", names)
+            selected_path = next(path for path in figure_files if path.name == selected_name)
+            st.image(str(selected_path), use_column_width=True)
+            st.download_button(
+                "Download figure",
+                selected_path.read_bytes(),
+                file_name=selected_path.name,
+                mime=mime_for(selected_path),
+            )
 
-        names = [path.name for path in figure_files]
-        selected_name = st.selectbox("Figure", names)
-        selected_path = next(path for path in figure_files if path.name == selected_name)
-        st.image(str(selected_path), use_column_width=True)
+    with data_tab:
+        render_indicator_tables(indicators)
+
+
+def render_download_list(paths: list[Path], empty_message: str, key_prefix: str) -> None:
+    if not paths:
+        st.info(empty_message)
+        return
+
+    for path in paths:
+        label = f"{path.name} ({path.stat().st_size / 1024:,.0f} KB)"
         st.download_button(
-            "Download figure",
-            selected_path.read_bytes(),
-            file_name=selected_path.name,
-            mime=mime_for(selected_path),
+            label,
+            path.read_bytes(),
+            file_name=path.name,
+            mime=mime_for(path),
+            key=f"{key_prefix}_{path.name}",
+            use_container_width=True,
         )
 
 
