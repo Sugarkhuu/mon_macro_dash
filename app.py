@@ -1069,7 +1069,7 @@ def monthly_gdp_nom_y(dq: pd.DataFrame, monthly_index: pd.Index) -> pd.Series | 
         return None
 
     quarterly = pd.Series(gdp_nom.values, index=pd.DatetimeIndex(parsed_quarters)).sort_index()
-    monthly = quarterly.resample("M").ffill() / 3
+    monthly = quarterly.resample("ME").ffill() / 3
     monthly_periods = monthly.index.year.astype(str).str[-2:] + "M" + monthly.index.month.astype(str).str.zfill(2)
     monthly.index = monthly_periods
     monthly = monthly.reindex(monthly_index).ffill()
