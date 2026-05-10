@@ -9,6 +9,7 @@ from typing import Any
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from auth_utils import verify_password
@@ -127,6 +128,311 @@ MACRO_CHART_LABELS = {
     "mse1.png": "MSE TOP 20",
 }
 
+PLOTLY_MACRO_SECTIONS = {
+    "Short Overview": [
+        {
+            "title": "Inflation and Policy Rate",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "cpi", "label": "Inflation YoY", "transform": "yoy", "lag": 12},
+                {"column": "cpi", "label": "Inflation MoM", "transform": "pct_change", "lag": 1},
+                {"column": "rate_pol", "label": "Policy rate"},
+            ],
+        },
+        {
+            "title": "Growth and Household Momentum",
+            "dataset": "Quarterly",
+            "unit": "%",
+            "lines": [
+                {"column": "gdp", "label": "GDP YoY", "transform": "yoy", "lag": 4},
+                {"column": "gdp", "label": "GDP 4Q YoY", "transform": "rolling_yoy", "window": 4, "lag": 4},
+                {"column": "hh_inc", "label": "Household income YoY", "transform": "yoy", "lag": 4},
+                {"column": "hh_exp", "label": "Household spending YoY", "transform": "yoy", "lag": 4},
+            ],
+        },
+        {
+            "title": "External Snapshot",
+            "dataset": "Monthly",
+            "lines": [
+                {"column": "usd_mnt", "label": "USD/MNT"},
+                {"column": "fx_reserve", "label": "FX reserves, bn USD", "scale": 0.001},
+                {"column": "ex_cum", "label": "Exports, bn USD", "scale": 0.001},
+                {"column": "im_cum", "label": "Imports, bn USD", "scale": 0.001},
+            ],
+        },
+    ],
+    "Real Economy": [
+        {
+            "title": "Real GDP Growth",
+            "dataset": "Quarterly",
+            "unit": "%",
+            "lines": [
+                {"column": "gdp", "label": "Quarter YoY", "transform": "yoy", "lag": 4},
+                {"column": "gdp", "label": "4-quarter sum YoY", "transform": "rolling_yoy", "window": 4, "lag": 4},
+            ],
+        },
+        {
+            "title": "GDP Growth Contributions",
+            "dataset": "Quarterly",
+            "unit": "percentage points",
+            "bars": [
+                {"column": "gdp_agr", "label": "Agriculture", "transform": "diff_share", "denominator": "gdp", "lag": 4},
+                {"column": "gdp_mine", "label": "Mining", "transform": "diff_share", "denominator": "gdp", "lag": 4},
+                {"column": "gdp_manu", "label": "Manufacturing", "transform": "diff_share", "denominator": "gdp", "lag": 4},
+                {"column": "gdp_cons", "label": "Construction", "transform": "diff_share", "denominator": "gdp", "lag": 4},
+                {"column": "gdp_trad", "label": "Trade", "transform": "diff_share", "denominator": "gdp", "lag": 4},
+                {"column": "gdp_serv_oth", "label": "Other services", "transform": "diff_share", "denominator": "gdp", "lag": 4},
+                {"column": "gdp_tax", "label": "Net taxes", "transform": "diff_share", "denominator": "gdp", "lag": 4},
+            ],
+            "lines": [
+                {"column": "gdp", "label": "GDP growth", "transform": "diff_share", "denominator": "gdp", "lag": 4}
+            ],
+        },
+        {
+            "title": "Household Income and Spending",
+            "dataset": "Quarterly",
+            "unit": "%",
+            "lines": [
+                {"column": "hh_inc", "label": "Income YoY", "transform": "yoy", "lag": 4},
+                {"column": "hh_exp", "label": "Spending YoY", "transform": "yoy", "lag": 4},
+                {"columns_sum": ["hh_inc"], "denominator": "hh_exp", "label": "Income / spending", "transform": "ratio"},
+            ],
+        },
+    ],
+    "Inflation and Prices": [
+        {
+            "title": "Headline Inflation",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "cpi", "label": "YoY", "transform": "yoy", "lag": 12},
+                {"column": "cpi", "label": "MoM", "transform": "pct_change", "lag": 1},
+                {"column": "cpi", "label": "3-month annualized", "transform": "annualized_pct_change", "lag": 3, "annualizer": 4},
+            ],
+        },
+        {
+            "title": "Inflation by Main Components",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "cpi_food", "label": "Food", "transform": "yoy", "lag": 12},
+                {"column": "cpi_nonfood", "label": "Non-food", "transform": "yoy", "lag": 12},
+                {"column": "cpi", "label": "Headline", "transform": "yoy", "lag": 12},
+            ],
+        },
+        {
+            "title": "Selected CPI Components",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "cpi_food", "label": "Food", "transform": "yoy", "lag": 12},
+                {"column": "cpi_tran", "label": "Transport", "transform": "yoy", "lag": 12},
+                {"column": "cpi_hote", "label": "Restaurants and hotels", "transform": "yoy", "lag": 12},
+                {"column": "cpi_educ", "label": "Education", "transform": "yoy", "lag": 12},
+            ],
+        },
+    ],
+    "Exchange Rate": [
+        {
+            "title": "Exchange Rates",
+            "dataset": "Monthly",
+            "lines": [
+                {"column": "usd_mnt", "label": "USD/MNT"},
+                {"column": "cny_mnt", "label": "CNY/MNT"},
+                {"column": "rub_mnt", "label": "RUB/MNT"},
+                {"column": "eur_mnt", "label": "EUR/MNT"},
+            ],
+        },
+        {
+            "title": "Exchange Rate Changes",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "usd_mnt", "label": "USD/MNT YoY", "transform": "yoy", "lag": 12},
+                {"column": "cny_mnt", "label": "CNY/MNT YoY", "transform": "yoy", "lag": 12},
+                {"column": "usd_mnt", "label": "USD/MNT MoM", "transform": "pct_change", "lag": 1},
+            ],
+        },
+    ],
+    "Balance of Payments and Trade": [
+        {
+            "title": "Current Account",
+            "dataset": "Quarterly",
+            "unit": "mn USD",
+            "bars": [
+                {"column": "bop_ca_goods", "label": "Goods"},
+                {"column": "bop_ca_serv", "label": "Services"},
+                {"column": "bop_ca_prim", "label": "Primary income"},
+                {"column": "bop_ca_sec", "label": "Secondary income"},
+            ],
+            "lines": [{"column": "bop_ca", "label": "Current account"}],
+        },
+        {
+            "title": "Balance of Payments",
+            "dataset": "Quarterly",
+            "unit": "mn USD",
+            "bars": [
+                {"column": "bop_ca", "label": "Current account"},
+                {"column": "bop_capa", "label": "Capital account"},
+                {"column": "bop_fa", "label": "Financial account"},
+                {"column": "bop_eo", "label": "Errors and omissions"},
+            ],
+            "lines": [{"column": "bop", "label": "Overall balance"}],
+        },
+        {
+            "title": "Trade and Reserves",
+            "dataset": "Monthly",
+            "lines": [
+                {"column": "ex_cum", "label": "Exports, bn USD", "scale": 0.001},
+                {"column": "im_cum", "label": "Imports, bn USD", "scale": 0.001},
+                {"column": "fx_reserve", "label": "FX reserves, bn USD", "scale": 0.001},
+            ],
+        },
+        {
+            "title": "Coal Exports",
+            "dataset": "Monthly",
+            "lines": [
+                {"column": "ex_coal_vol_cum", "label": "Volume, mn tons", "scale": 0.001},
+                {"column": "ex_coal_cum", "label": "Revenue, bn USD", "scale": 0.000001},
+                {"column": "ex_coal_p", "label": "Price, USD/ton"},
+            ],
+        },
+    ],
+    "Interest Rates": [
+        {
+            "title": "Policy, Lending, and Deposit Rates",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "rate_pol", "label": "Policy rate"},
+                {"column": "rate_loan_mnt_new", "label": "New MNT loans"},
+                {"column": "rate_timedepo_mnt_new", "label": "New MNT time deposits"},
+            ],
+        },
+        {
+            "title": "Money Market Rates",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "rate_ib_on", "label": "Interbank overnight"},
+                {"column": "rate_ib_depo", "label": "Interbank deposits"},
+                {"column": "rate_cbb_4w", "label": "CBB 4w"},
+                {"column": "rate_gb_12w", "label": "Government bills 12w"},
+            ],
+        },
+    ],
+    "Bank and Money Supply": [
+        {
+            "title": "Money Supply Growth",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "cb_mbase", "label": "Monetary base", "transform": "yoy", "lag": 12},
+                {"column": "ms_m1", "label": "M1", "transform": "yoy", "lag": 12},
+                {"column": "ms_m2", "label": "M2", "transform": "yoy", "lag": 12},
+            ],
+        },
+        {
+            "title": "Money Supply Level",
+            "dataset": "Monthly",
+            "unit": "tn MNT",
+            "bars": [
+                {"column": "ms_cashout", "label": "Currency outside banks", "scale": 0.000001},
+                {"column": "ms_m2_dep_ca_dc", "label": "Current accounts LCY", "scale": 0.000001},
+                {"column": "ms_dep_mnt", "label": "Time deposits LCY", "scale": 0.000001},
+                {"column": "ms_ca_fx", "label": "Current accounts FCY", "scale": 0.000001},
+                {"column": "ms_dep_fx", "label": "Time deposits FCY", "scale": 0.000001},
+            ],
+            "lines": [{"column": "ms_m2", "label": "M2", "scale": 0.000001}],
+        },
+        {
+            "title": "Credit Growth",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "bank_ass_credit_nfi", "label": "Total credit", "transform": "yoy", "lag": 12},
+                {"column": "dc_loan_corp", "label": "Corporate loans", "transform": "yoy", "lag": 12},
+                {"column": "dc_loan_ind", "label": "Individual loans", "transform": "yoy", "lag": 12},
+            ],
+        },
+        {
+            "title": "Credit Structure",
+            "dataset": "Quarterly",
+            "unit": "tn MNT",
+            "bars": [
+                {"column": "bank_ass_credit_norm", "label": "Standard", "scale": 0.000001},
+                {"column": "bank_ass_credit_ovrd", "label": "Overdue", "scale": 0.000001},
+                {"column": "bank_ass_credit_npl", "label": "NPL", "scale": 0.000001},
+            ],
+            "lines": [{"column": "bank_ass_credit_nfi", "label": "Total credit", "scale": 0.000001}],
+        },
+        {
+            "title": "NPL Ratios",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "bank_ass_credit_npl", "denominator": "bank_ass_credit_nfi", "label": "Total NPL ratio", "transform": "ratio"},
+                {"column": "bank_ass_credit_npl_corp", "denominator": "bank_ass_credit_corp", "label": "Corporate NPL ratio", "transform": "ratio"},
+                {"column": "bank_ass_credit_npl_ind", "denominator": "bank_ass_credit_ind", "label": "Individual NPL ratio", "transform": "ratio"},
+            ],
+        },
+    ],
+    "Fiscal Sector": [
+        {
+            "title": "Budget Balance",
+            "dataset": "Quarterly",
+            "unit": "tn MNT",
+            "bars": [
+                {"column": "gov_rev_eq", "label": "Revenue", "scale": 0.001},
+                {"column": "gov_exp", "label": "Expenditure", "scale": -0.001},
+            ],
+            "lines": [
+                {"columns_sum": ["gov_rev_eq"], "minus_columns": ["gov_exp"], "label": "Balance", "scale": 0.001}
+            ],
+        },
+        {
+            "title": "Fiscal Ratios",
+            "dataset": "Quarterly",
+            "unit": "% of GDP",
+            "lines": [
+                {"column": "gov_rev_eq", "denominator": "gdp_nom_y", "label": "Revenue / GDP", "transform": "ratio", "scale": 1000},
+                {"column": "gov_exp", "denominator": "gdp_nom_y", "label": "Expenditure / GDP", "transform": "ratio", "scale": 1000},
+            ],
+        },
+        {
+            "title": "Budget Growth",
+            "dataset": "Monthly",
+            "unit": "%",
+            "lines": [
+                {"column": "gov_rev_cum", "label": "Revenue YoY", "transform": "yoy", "lag": 12},
+                {"column": "gov_exp_cum", "label": "Expenditure YoY", "transform": "yoy", "lag": 12},
+            ],
+        },
+    ],
+    "Socio-economic and Other": [
+        {
+            "title": "Wages and Household Budget",
+            "dataset": "Quarterly",
+            "unit": "%",
+            "lines": [
+                {"column": "wage_avg", "label": "Average wage YoY", "transform": "yoy", "lag": 4},
+                {"column": "wage_median", "label": "Median wage YoY", "transform": "yoy", "lag": 4},
+                {"column": "hh_inc", "label": "Household income YoY", "transform": "yoy", "lag": 4},
+                {"column": "hh_exp", "label": "Household spending YoY", "transform": "yoy", "lag": 4},
+            ],
+        },
+        {
+            "title": "MSE TOP 20",
+            "dataset": "Monthly",
+            "lines": [
+                {"column": "mse_top20_avg", "label": "Index"},
+                {"column": "mse_top20_avg", "label": "YoY change, %", "transform": "yoy", "lag": 12},
+            ],
+        },
+    ],
+}
+
 DATASET_DEFAULTS = {
     "Monthly": ["cpi", "usd_mnt", "rate_pol", "ms_m2", "bank_ass_credit_nfi"],
     "Quarterly": ["gdp", "gdp_nom", "hh_inc", "hh_exp"],
@@ -213,7 +519,7 @@ def main() -> None:
     )
 
     with overview_tab:
-        render_overview(monthly_ts, quarterly_ts)
+        render_overview(macro_data, monthly_ts, quarterly_ts)
 
     with table_tab:
         render_indicator_tables(indicators)
@@ -452,7 +758,11 @@ def latest_index(frame: pd.DataFrame) -> str:
     return str(clean.index[-1])
 
 
-def render_overview(monthly_ts: pd.DataFrame, quarterly_ts: pd.DataFrame) -> None:
+def render_overview(
+    macro_data: dict[str, pd.DataFrame],
+    monthly_ts: pd.DataFrame,
+    quarterly_ts: pd.DataFrame,
+) -> None:
     if monthly_ts.empty and quarterly_ts.empty:
         st.warning("No indicator workbook found. Run `code/process_data.py` and `code/macro_table.py` first.")
         return
@@ -465,7 +775,7 @@ def render_overview(monthly_ts: pd.DataFrame, quarterly_ts: pd.DataFrame) -> Non
         st.subheader("Quarterly Snapshot")
         render_metric_grid(quarterly_ts, QUARTERLY_METRICS)
 
-    render_macro_chart_sections()
+    render_plotly_macro_sections(macro_data)
 
     with st.expander("Interactive Indicator Trends", expanded=False):
         if not monthly_ts.empty:
@@ -474,48 +784,195 @@ def render_overview(monthly_ts: pd.DataFrame, quarterly_ts: pd.DataFrame) -> Non
             render_chart_section("Quarterly Trends", quarterly_ts, QUARTERLY_CHARTS, default_observations=36)
 
 
-def render_macro_chart_sections() -> None:
+def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
     st.subheader("Macro Charts")
 
-    if not FIGURE_DIR.exists():
-        st.info("No `figures` folder found. Run `code/macro_charts.py` to generate macro chart PNGs.")
+    if not macro_data:
+        st.info("No macro dataset found. Run the data pipeline to create `data/macro_data.pickle`.")
         return
 
-    available_count = sum(
-        1
-        for chart_files in MACRO_CHART_SECTIONS.values()
-        for filename in chart_files
-        if (FIGURE_DIR / filename).exists()
+    control_cols = st.columns([1, 1, 2])
+    monthly_window = control_cols[0].slider(
+        "Monthly periods",
+        min_value=12,
+        max_value=180,
+        value=72,
+        step=6,
     )
-    if available_count == 0:
-        st.info("No macro chart PNGs found yet. Run `code/macro_charts.py` to populate the `figures` folder.")
+    quarterly_window = control_cols[1].slider(
+        "Quarterly periods",
+        min_value=8,
+        max_value=80,
+        value=40,
+        step=4,
+    )
+    expand_all = control_cols[2].checkbox("Expand all macro chart sections", value=False)
+
+    windows = {
+        "Monthly": int(monthly_window),
+        "Quarterly": int(quarterly_window),
+        "Yearly": 30,
+        "Daily": 365,
+    }
+
+    for index, (section_name, chart_specs) in enumerate(PLOTLY_MACRO_SECTIONS.items()):
+        with st.expander(f"{section_name} ({len(chart_specs)} charts)", expanded=expand_all or index == 0):
+            for chart_index, chart_spec in enumerate(chart_specs):
+                if chart_index:
+                    st.divider()
+                render_macro_plotly_chart(macro_data, chart_spec, windows)
+
+
+def render_macro_plotly_chart(
+    macro_data: dict[str, pd.DataFrame],
+    chart_spec: dict[str, Any],
+    windows: dict[str, int],
+) -> None:
+    dataset_name = str(chart_spec.get("dataset", "Monthly"))
+    frame = macro_data.get(dataset_name)
+    if frame is None or frame.empty:
+        st.info(f"{dataset_name} data is not available.")
         return
 
-    expand_all = st.checkbox("Expand all macro chart sections", value=False)
-    for index, (section_name, chart_files) in enumerate(MACRO_CHART_SECTIONS.items()):
-        existing_files = [FIGURE_DIR / filename for filename in chart_files if (FIGURE_DIR / filename).exists()]
-        missing_count = len(chart_files) - len(existing_files)
-        if not existing_files:
+    bars = build_chart_series(frame, chart_spec.get("bars", []))
+    lines = build_chart_series(frame, chart_spec.get("lines", []))
+    all_series = bars + lines
+    if not all_series:
+        st.info(f"No available series for {chart_spec.get('title', 'this chart')}.")
+        return
+
+    observations = int(chart_spec.get("observations") or windows.get(dataset_name, 60))
+    chart_frame = pd.concat({label: series for label, series in all_series}, axis=1)
+    chart_frame = chart_frame.apply(pd.to_numeric, errors="coerce").dropna(how="all").tail(observations)
+    if chart_frame.empty:
+        st.info(f"No numeric observations for {chart_spec.get('title', 'this chart')}.")
+        return
+
+    x_values, x_title = chart_x_values(chart_frame.index)
+    fig = go.Figure()
+
+    for label, _series in bars:
+        fig.add_trace(
+            go.Bar(
+                x=x_values,
+                y=chart_frame[label],
+                name=label,
+            )
+        )
+
+    for label, _series in lines:
+        fig.add_trace(
+            go.Scatter(
+                x=x_values,
+                y=chart_frame[label],
+                name=label,
+                mode="lines",
+                line=dict(width=2.2),
+            )
+        )
+
+    fig.update_layout(
+        title=dict(text=str(chart_spec.get("title", "")), font=dict(size=15)),
+        template="plotly_white",
+        height=360,
+        margin=dict(l=12, r=12, t=52, b=16),
+        hovermode="x unified",
+        legend=dict(orientation="h", yanchor="bottom", y=-0.36, xanchor="left", x=0),
+        barmode="relative",
+    )
+    fig.update_xaxes(title_text=x_title)
+    fig.update_yaxes(title_text=str(chart_spec.get("unit", "")))
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        key=f"macro_plotly_{chart_spec.get('title', '')}_{dataset_name}",
+    )
+
+
+def build_chart_series(
+    frame: pd.DataFrame,
+    series_specs: list[dict[str, Any]],
+) -> list[tuple[str, pd.Series]]:
+    built: list[tuple[str, pd.Series]] = []
+    for series_spec in series_specs:
+        series = transformed_series(frame, series_spec)
+        if series is None:
             continue
+        clean = pd.to_numeric(series, errors="coerce")
+        if clean.dropna().empty:
+            continue
+        built.append((str(series_spec.get("label") or series_spec.get("column")), clean))
+    return built
 
-        label = f"{section_name} ({len(existing_files)} charts)"
-        with st.expander(label, expanded=expand_all or index == 0):
-            if missing_count:
-                st.caption(f"{missing_count} expected chart file(s) are not available.")
 
-            columns = st.columns(2)
-            for chart_index, path in enumerate(existing_files):
-                with columns[chart_index % 2]:
-                    st.markdown(f"**{MACRO_CHART_LABELS.get(path.name, path.stem)}**")
-                    st.image(str(path), use_column_width=True)
-                    st.download_button(
-                        "Download",
-                        path.read_bytes(),
-                        file_name=path.name,
-                        mime=mime_for(path),
-                        key=f"macro_chart_download_{section_name}_{path.name}",
-                        use_container_width=True,
-                    )
+def transformed_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series | None:
+    base = base_series(frame, series_spec)
+    if base is None:
+        return None
+
+    transform = str(series_spec.get("transform") or "level")
+    lag = int(series_spec.get("lag") or 1)
+
+    if transform in {"level", ""}:
+        result = base
+    elif transform in {"pct_change", "yoy"}:
+        result = base.pct_change(lag, fill_method=None) * 100
+    elif transform == "annualized_pct_change":
+        annualizer = float(series_spec.get("annualizer") or 1)
+        result = base.pct_change(lag, fill_method=None) * annualizer * 100
+    elif transform == "rolling_yoy":
+        window = int(series_spec.get("window") or lag)
+        result = base.rolling(window=window, min_periods=window).sum().pct_change(lag, fill_method=None) * 100
+    elif transform == "ratio":
+        denominator = denominator_series(frame, series_spec)
+        if denominator is None:
+            return None
+        result = base.div(denominator) * 100
+    elif transform == "diff_share":
+        denominator = denominator_series(frame, series_spec)
+        if denominator is None:
+            return None
+        result = base.diff(lag).div(denominator.shift(lag)) * 100
+    else:
+        result = base
+
+    scale = float(series_spec.get("scale") or 1)
+    return result * scale
+
+
+def base_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series | None:
+    if "column" in series_spec:
+        column = str(series_spec["column"])
+        if column not in frame.columns:
+            return None
+        base = pd.to_numeric(frame[column], errors="coerce")
+    else:
+        columns = [str(column) for column in series_spec.get("columns_sum", [])]
+        existing = [column for column in columns if column in frame.columns]
+        if not existing:
+            return None
+        base = frame[existing].apply(pd.to_numeric, errors="coerce").sum(axis=1, min_count=1)
+
+    minus_columns = [str(column) for column in series_spec.get("minus_columns", [])]
+    existing_minus = [column for column in minus_columns if column in frame.columns]
+    if existing_minus:
+        base = base - frame[existing_minus].apply(pd.to_numeric, errors="coerce").sum(axis=1, min_count=1)
+
+    return base
+
+
+def denominator_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series | None:
+    denominator = str(series_spec.get("denominator") or "")
+    if denominator not in frame.columns:
+        return None
+    return pd.to_numeric(frame[denominator], errors="coerce")
+
+
+def chart_x_values(index: pd.Index) -> tuple[pd.Series | pd.Index, str]:
+    dates = index_to_datetime(index)
+    if dates.notna().all():
+        return dates, ""
+    return index.astype(str), "Period"
 
 
 def render_metric_grid(
@@ -781,10 +1238,10 @@ def transform_frame(frame: pd.DataFrame, dataset: str, transform: str) -> pd.Dat
     if transform == "Difference":
         return numeric.diff()
     if transform == "Percent change":
-        return numeric.pct_change() * 100
+        return numeric.pct_change(fill_method=None) * 100
     if transform == "Year-over-year":
         lags = {"Daily": 365, "Monthly": 12, "Quarterly": 4, "Yearly": 1}
-        return numeric.pct_change(lags.get(dataset, 1)) * 100
+        return numeric.pct_change(lags.get(dataset, 1), fill_method=None) * 100
     return numeric
 
 
