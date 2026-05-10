@@ -564,25 +564,13 @@ def main() -> None:
     inject_css()
     user = require_login()
 
-    with st.sidebar:
-        st.caption(f"Signed in as {user['name']}")
-        if st.button("Sign out", use_container_width=True):
-            sign_out()
-            st.rerun()
-
-        st.divider()
-        st.caption("Data cache")
-        if st.button("Reload files", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
-
     macro_data = load_macro_data(str(DATA_PICKLE), file_mtime(DATA_PICKLE))
     indicators = load_indicator_workbook(str(MAIN_INDICATORS), file_mtime(MAIN_INDICATORS))
 
     monthly_ts = indicator_timeseries(indicators.get("m"))
     quarterly_ts = indicator_timeseries(indicators.get("q"))
 
-    render_header(macro_data, monthly_ts, quarterly_ts)
+    render_header(macro_data, monthly_ts, quarterly_ts, user)
 
     overview_tab, updates_tab, forecast_tab, explorer_tab, archive_tab = st.tabs(
         ["Overview", "Updates", "Forecasts", "Data Explorer", "Archive"]
@@ -717,6 +705,15 @@ def inject_css() -> None:
     st.markdown(
         """
 <style>
+    header,
+    footer,
+    #MainMenu,
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"] {
+        visibility: hidden;
+        height: 0;
+    }
     .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
@@ -800,8 +797,16 @@ def render_header(
     macro_data: dict[str, pd.DataFrame],
     monthly_ts: pd.DataFrame,
     quarterly_ts: pd.DataFrame,
+    user: dict[str, str],
 ) -> None:
-    st.title("Mongolian Macroeconomic Dashboard")
+    title_col, action_col = st.columns([5, 1])
+    with title_col:
+        st.title("Mongolian Macroeconomic Dashboard")
+    with action_col:
+        st.caption(f"Signed in as {user['name']}")
+        if st.button("Sign out", use_container_width=True):
+            sign_out()
+            st.rerun()
 
     monthly_latest = latest_index(monthly_ts)
     quarterly_latest = latest_index(quarterly_ts)
