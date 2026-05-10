@@ -601,7 +601,7 @@ def require_login() -> dict[str, str]:
 
     if st.session_state.get("authenticated"):
         return {
-            "username": st.session_state.get("username", ""),
+            "email": st.session_state.get("email", ""),
             "name": st.session_state.get("display_name", "User"),
             "role": st.session_state.get("role", "viewer"),
         }
@@ -611,7 +611,7 @@ def require_login() -> dict[str, str]:
     with middle:
         st.subheader("Sign in")
         with st.form("login_form", clear_on_submit=False):
-            username = st.text_input("Username").strip()
+            email = st.text_input("Email").strip().lower()
             password = st.text_input("Password", type="password")
             submitted = st.form_submit_button(
                 "Sign in",
@@ -620,16 +620,16 @@ def require_login() -> dict[str, str]:
             )
 
         if submitted:
-            matched_username, user_config = find_user(username, users)
-            if matched_username and password_is_valid(password, user_config):
+            matched_email, user_config = find_user(email, users)
+            if matched_email and password_is_valid(password, user_config):
                 st.session_state["authenticated"] = True
-                st.session_state["username"] = matched_username
+                st.session_state["email"] = matched_email
                 st.session_state["display_name"] = str(
-                    user_config.get("name") or matched_username
+                    user_config.get("name") or matched_email
                 )
                 st.session_state["role"] = str(user_config.get("role") or "viewer")
                 st.rerun()
-            st.error("Invalid username or password.")
+            st.error("Invalid email or password.")
 
     st.stop()
 
@@ -659,8 +659,8 @@ def load_auth_users() -> dict[str, dict[str, Any]]:
 
     users = safe_dict(auth_config).get("users", {})
     return {
-        str(username): safe_dict(config)
-        for username, config in safe_dict(users).items()
+        str(email).lower(): safe_dict(config)
+        for email, config in safe_dict(users).items()
     }
 
 
@@ -674,13 +674,13 @@ def safe_dict(value: Any) -> dict[str, Any]:
 
 
 def find_user(
-    submitted_username: str,
+    submitted_email: str,
     users: dict[str, dict[str, Any]],
 ) -> tuple[str | None, dict[str, Any]]:
-    normalized = submitted_username.strip().lower()
-    for username, config in users.items():
-        if username.lower() == normalized:
-            return username, config
+    normalized = submitted_email.strip().lower()
+    for email, config in users.items():
+        if email.lower() == normalized:
+            return email, config
     return None, {}
 
 
@@ -697,7 +697,7 @@ def password_is_valid(password: str, user_config: dict[str, Any]) -> bool:
 
 
 def sign_out() -> None:
-    for key in ("authenticated", "username", "display_name", "role"):
+    for key in ("authenticated", "email", "display_name", "role"):
         st.session_state.pop(key, None)
 
 
