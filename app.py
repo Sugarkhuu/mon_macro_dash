@@ -6,6 +6,7 @@ import pickle
 import re
 from pathlib import Path
 from typing import Any
+import os
 
 import pandas as pd
 import plotly.express as px
@@ -199,111 +200,6 @@ MACRO_CHART_LABELS = {
 }
 
 PLOTLY_MACRO_SECTIONS = {
-    "Short Overview": [
-        {
-            "title": "Short Overview",
-            "layout": "2x2",
-            "charts": [
-                {
-                    "title": "Real GDP growth (YoY)",
-                    "dataset": "Quarterly",
-                    "unit": "%",
-                    "lines": [{"column": "gdp", "label": "Real GDP", "transform": "yoy", "lag": 4}],
-                },
-                {
-                    "title": "Nominal GDP growth (YoY)",
-                    "dataset": "Quarterly",
-                    "unit": "%",
-                    "lines": [{"column": "gdp_nom", "label": "Nominal GDP", "transform": "yoy", "lag": 4}],
-                },
-                {
-                    "title": "MNT/USD exchange rate",
-                    "dataset": "Monthly",
-                    "lines": [{"column": "usd_mnt", "label": "USD/MNT"}],
-                },
-                {
-                    "title": "Inflation (YoY)",
-                    "dataset": "Monthly",
-                    "unit": "%",
-                    "lines": [{"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12}],
-                },
-            ],
-        },
-        {
-            "title": "Short Overview",
-            "layout": "2x2",
-            "charts": [
-                {
-                    "title": "Real GDP growth (yearly)",
-                    "dataset": "Yearly",
-                    "unit": "%",
-                    "lines": [{"column": "gdp", "label": "Real GDP", "transform": "yoy", "lag": 1}],
-                },
-                {
-                    "title": "Nominal GDP growth (yearly)",
-                    "dataset": "Yearly",
-                    "unit": "%",
-                    "lines": [{"column": "gdp_nom", "label": "Nominal GDP", "transform": "yoy", "lag": 1}],
-                },
-                {
-                    "title": "MNT/USD exchange rate",
-                    "dataset": "Yearly",
-                    "lines": [
-                        {"column": "usd_mnt_avg", "label": "Mean"},
-                        {"column": "usd_mnt_last", "label": "Last"},
-                    ],
-                },
-                {
-                    "title": "Inflation (yearly)",
-                    "dataset": "Yearly",
-                    "unit": "%",
-                    "lines": [{"column": "cpi_last", "label": "Inflation", "transform": "yoy", "lag": 1}],
-                },
-            ],
-        },
-        {
-            "title": "Short Overview",
-            "layout": "2x2",
-            "charts": [
-                {
-                    "title": "Credit and money supply (YoY)",
-                    "dataset": "Monthly",
-                    "unit": "%",
-                    "lines": [
-                        {"column": "bank_ass_credit_nfi", "label": "Banking sector credit", "transform": "yoy", "lag": 12},
-                        {"column": "ms_m2", "label": "M2", "transform": "yoy", "lag": 12},
-                    ],
-                },
-                {
-                    "title": "Inflation and money supply (YoY)",
-                    "dataset": "Monthly",
-                    "unit": "%",
-                    "lines": [
-                        {"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12},
-                        {"column": "ms_m2", "label": "M2", "transform": "yoy", "lag": 12},
-                    ],
-                },
-                {
-                    "title": "FX rate and inflation (YoY)",
-                    "dataset": "Monthly",
-                    "unit": "%",
-                    "lines": [
-                        {"column": "usd_mnt", "label": "USD/MNT", "transform": "yoy", "lag": 12},
-                        {"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12},
-                    ],
-                },
-                {
-                    "title": "Inflation and policy rate",
-                    "dataset": "Monthly",
-                    "unit": "%",
-                    "lines": [
-                        {"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12},
-                        {"column": "rate_pol", "label": "Policy rate"},
-                    ],
-                },
-            ],
-        },
-    ],
     "Real Economy": [
         {
             "title": "Real Economy",
@@ -372,7 +268,7 @@ PLOTLY_MACRO_SECTIONS = {
                 {
                     "title": "Real GDP decomposition (shares)",
                     "dataset": "Yearly",
-                    "unit": "% of GDP",
+                    "unit": "%",
                     "bars": [
                         {"column": "gdp_agr_share", "label": "Agriculture"},
                         {"column": "gdp_mine_share", "label": "Mining"},
@@ -739,6 +635,13 @@ def main() -> None:
 
 
 def require_login() -> dict[str, str]:
+    if os.getenv("STREAMLIT_RUNTIME") != "cloud":
+        return {
+            "email": "local",
+            "name": "Local User",
+            "role": "admin",
+        }
+
     users = load_auth_users()
 
     if not users:
@@ -851,6 +754,11 @@ def inject_css() -> None:
     st.markdown(
         """
 <style>
+    details summary p {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.04em;
+    }
     header,
     footer,
     #MainMenu,
@@ -1141,11 +1049,11 @@ def render_overview(
 
     render_plotly_macro_sections(macro_data)
 
-    with st.expander("Interactive Indicator Trends", expanded=False):
-        if not monthly_ts.empty:
-            render_chart_section("Monthly Trends", monthly_ts, MONTHLY_CHARTS, default_observations=60)
-        if not quarterly_ts.empty:
-            render_chart_section("Quarterly Trends", quarterly_ts, QUARTERLY_CHARTS, default_observations=36)
+    # with st.expander("Interactive Indicator Trends", expanded=False):
+    #     if not monthly_ts.empty:
+    #         render_chart_section("Monthly Trends", monthly_ts, MONTHLY_CHARTS, default_observations=60)
+    #     if not quarterly_ts.empty:
+    #         render_chart_section("Quarterly Trends", quarterly_ts, QUARTERLY_CHARTS, default_observations=36)
 
 
 def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
@@ -1180,7 +1088,11 @@ def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
     }
 
     for index, (section_name, chart_specs) in enumerate(PLOTLY_MACRO_SECTIONS.items()):
-        with st.expander(f"{section_name} ({len(chart_specs)} charts)", expanded=expand_all or index == 0):
+
+        with st.expander(
+            section_name.upper(),
+            expanded=expand_all or index == 0,
+        ):
             for chart_index, chart_spec in enumerate(chart_specs):
                 if chart_index:
                     st.divider()
@@ -1274,6 +1186,17 @@ def build_macro_plotly_chart_figure(
     observations = int(chart_spec.get("observations") or windows.get(dataset_name, 60))
     chart_frame = pd.concat({label: series for label, series in all_series}, axis=1)
     chart_frame = chart_frame.apply(pd.to_numeric, errors="coerce").dropna(how="all").tail(observations)
+
+    if str(chart_spec.get("title", "")) == "Real GDP decomposition (shares)":
+        bar_labels = [label for label, _series in bars]
+        bar_totals = chart_frame[bar_labels].sum(axis=1, min_count=1)
+
+        chart_frame[bar_labels] = (
+            chart_frame[bar_labels]
+            .div(bar_totals.replace(0, pd.NA), axis=0)
+            * 100
+        )
+
     if chart_frame.empty:
         return None
 
@@ -1495,11 +1418,32 @@ def derived_real_economy_series(frame: pd.DataFrame, series_spec: dict[str, Any]
 
     share_match = re.fullmatch(r"gdp_(.+)_share", column)
     if share_match:
-        numerator = f"gdp_{share_match.group(1)}"
-        if numerator not in frame.columns or "gdp" not in frame.columns:
-            return None
-        return pd.to_numeric(frame[numerator], errors="coerce").div(pd.to_numeric(frame["gdp"], errors="coerce")) * 100
+        sector_columns = [
+            "gdp_agr",
+            "gdp_mine",
+            "gdp_manu",
+            "gdp_elec",
+            "gdp_cons",
+            "gdp_trad",
+            "gdp_tran",
+            "gdp_comm",
+            "gdp_serv_oth",
+            "gdp_tax",
+        ]
 
+        numerator = f"gdp_{share_match.group(1)}"
+        existing = [col for col in sector_columns if col in frame.columns]
+
+        if numerator not in frame.columns or not existing:
+            return None
+
+        denominator = frame[existing].apply(pd.to_numeric, errors="coerce").sum(axis=1, min_count=1)
+
+        return (
+            pd.to_numeric(frame[numerator], errors="coerce")
+            .div(denominator)
+            * 100
+        )
     if column == "gdp_ytd_growth":
         return ytd_gdp_contribution(frame, "gdp")
     if column == "gdp_q_growth":
@@ -1571,9 +1515,14 @@ def quarter_period_parts(value: Any) -> tuple[int | None, int | None]:
 def chart_x_values(index: pd.Index) -> tuple[pd.Series | pd.Index, str]:
     labels = index.astype(str)
 
-    # Keep quarterly labels as 25Q1, 25Q2, ...
+    # Quarterly labels: 25Q1
     if all(re.fullmatch(r"\d{2}Q[1-4]", value) for value in labels):
         return labels, ""
+
+    # Yearly labels: 19Y -> 2019
+    if all(re.fullmatch(r"\d{2}Y", value) for value in labels):
+        yearly_labels = [f"20{value[:2]}" for value in labels]
+        return yearly_labels, ""
 
     dates = index_to_datetime(index)
 
