@@ -486,7 +486,7 @@ LABEL_OVERRIDES = {
 
 def main() -> None:
     st.set_page_config(
-        page_title="Mongolia Macro Dashboard",
+        page_title="Mongolian Macroeconomic Dashboard",
         page_icon="MN",
         layout="wide",
         initial_sidebar_state="expanded",
