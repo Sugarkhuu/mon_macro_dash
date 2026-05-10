@@ -1314,7 +1314,10 @@ def build_macro_plotly_chart_figure(
         legend=dict(orientation="h", yanchor="bottom", y=legend_y, xanchor="left", x=0),
         barmode="relative",
     )
-    fig.update_xaxes(title_text=x_title)
+    fig.update_xaxes(
+    title_text=x_title,
+    tickangle=-90,
+)
     fig.update_yaxes(
     title_text=str(chart_spec.get("unit", "")),
     tickformat=".1f",
@@ -1566,10 +1569,18 @@ def quarter_period_parts(value: Any) -> tuple[int | None, int | None]:
 
 
 def chart_x_values(index: pd.Index) -> tuple[pd.Series | pd.Index, str]:
+    labels = index.astype(str)
+
+    # Keep quarterly labels as 25Q1, 25Q2, ...
+    if all(re.fullmatch(r"\d{2}Q[1-4]", value) for value in labels):
+        return labels, ""
+
     dates = index_to_datetime(index)
+
     if dates.notna().all():
         return dates, ""
-    return index.astype(str), "Period"
+
+    return labels, "Period"
 
 
 def render_metric_grid(
@@ -1699,7 +1710,10 @@ def render_line_chart(
         margin=dict(l=12, r=12, t=18, b=12),
         hovermode="x unified",
     )
-    fig.update_xaxes(title_text="")
+    fig.update_xaxes(
+    title_text="",
+    tickangle=-90,
+)
     fig.update_yaxes(title_text="")
     render_expandable_plotly(
         fig,
@@ -1843,7 +1857,10 @@ def render_forecast_section() -> None:
         margin=dict(l=12, r=12, t=20, b=12),
         hovermode="x unified",
     )
-    fig.update_xaxes(title_text="")
+    fig.update_xaxes(
+    title_text="",
+    tickangle=-90,
+)
     fig.update_yaxes(title_text="Forecast value")
     render_expandable_plotly(
         fig,
