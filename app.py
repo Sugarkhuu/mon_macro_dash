@@ -1117,19 +1117,17 @@ def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
             expanded=expand_all or index == 0,
         ):
             summary = SECTION_SUMMARIES.get(section_name)
+
             if summary:
                 st.markdown(
                     f"""
-                    <div style="
-                        font-size: 1.5rem;
-                        line-height: 1.6;
-                        color: #425466;
-                        margin-bottom: 1rem;
-                        padding-left: 0.1rem;
-                    ">
-                        {summary}
-                    </div>
-                    """,
+            <div style='
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #425466;
+            margin-bottom: 1rem;
+            '>{summary}</div>
+            """,
                     unsafe_allow_html=True,
                 )
     
