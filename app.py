@@ -1121,7 +1121,7 @@ def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
                 st.markdown(
                     f"""
                     <div style="
-                        font-size: 5rem;
+                        font-size: 1.5rem;
                         line-height: 1.6;
                         color: #425466;
                         margin-bottom: 1rem;
