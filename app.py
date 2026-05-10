@@ -545,7 +545,7 @@ def require_login() -> dict[str, str]:
             "role": st.session_state.get("role", "viewer"),
         }
 
-    st.title("Mongolia Macro Dashboard")
+    st.title("Mongolian Macroeconomic Dashboard")
     left, middle, right = st.columns([1, 1.1, 1])
     with middle:
         st.subheader("Sign in")
@@ -574,7 +574,7 @@ def require_login() -> dict[str, str]:
 
 
 def render_auth_setup() -> None:
-    st.title("Mongolia Macro Dashboard")
+    st.title("Mongolian Macroeconomic Dashboard")
     st.warning("Access is not configured yet.")
     st.markdown(
         """
@@ -728,7 +728,7 @@ def render_header(
     monthly_ts: pd.DataFrame,
     quarterly_ts: pd.DataFrame,
 ) -> None:
-    st.title("Mongolia Macro Dashboard")
+    st.title("Mongolian Macroeconomic Dashboard")
 
     monthly_latest = latest_index(monthly_ts)
     quarterly_latest = latest_index(quarterly_ts)
