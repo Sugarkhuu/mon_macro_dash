@@ -1,0 +1,7 @@
+*/doc/*
+!*/doc/*.pdf
+!*/doc/*.tex
+.streamlit/secrets.toml
+.streamlit/*.log
+__pycache__/
+*.pyc
