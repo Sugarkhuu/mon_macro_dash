@@ -1329,6 +1329,7 @@ def render_expandable_plotly(
     compact: bool = False,
 ) -> None:
     st.plotly_chart(fig, use_container_width=True, key=key)
+    st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
 
 def title_with_last_period(title: str, series_items: list[tuple[str, pd.Series]]) -> str:
     period = latest_series_period(series_items)
