@@ -453,7 +453,7 @@ dm['ex_gdp'] = dm['ex_cum']*dm['usd_mnt']/dm['gdp_nom_y']*100
 dm['im_gdp'] = dm['im_cum']*dm['usd_mnt']/dm['gdp_nom_y']*100
 dm['ex_cum'] = dm['ex_cum']/1e3
 dm['im_cum'] = dm['im_cum']/1e3
-dm['fx_reserve'] = dm['fx_reserve']/1e3
+# dm['fx_reserve'] = dm['fx_reserve']/1e3
 
 # Household finance
 dq['hh_exp_inc'] = dq.hh_inc/dq.hh_exp*100
