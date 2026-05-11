@@ -1617,7 +1617,7 @@ def build_macro_plotly_chart_figure(
     )
     fig.update_xaxes(
     title_text=x_title,
-    tickangle=-90,
+    tickangle=0,
 )
 
     original_labels = list(chart_frame.index.astype(str))
@@ -1626,7 +1626,20 @@ def build_macro_plotly_chart_figure(
         tickvals = [
             label
             for label in original_labels
-            if int(label[-2:]) in {3, 6, 9, 12} or label == original_labels[-1]
+            if int(label[-2:]) in {12} or label == original_labels[-1]
+        ]
+        fig.update_xaxes(
+            type="category",
+            tickmode="array",
+            tickvals=tickvals,
+            ticktext=tickvals,
+        )
+        
+    elif all(re.fullmatch(r"\d{2}Q\d", value) for value in original_labels):
+        tickvals = [
+            label
+            for label in original_labels
+            if int(label[-1]) in {4} or label == original_labels[-1]
         ]
 
         fig.update_xaxes(
@@ -1635,6 +1648,22 @@ def build_macro_plotly_chart_figure(
             tickvals=tickvals,
             ticktext=tickvals,
         )
+    # elif all(re.fullmatch(r"\d{2}Y", value) for value in original_labels):
+    #     tickvals = [
+    #         label
+    #         for label in original_labels
+    #         if expand_two_digit_year(label[:2]) % 5 == 0 or label == original_labels[-1]
+    #     ]
+
+    #     fig.update_xaxes(
+    #         type="category",
+    #         tickmode="array",
+    #         tickvals=tickvals,
+    #         ticktext=[str(expand_two_digit_year(label[:2])) for label in tickvals],
+    #     )
+    else:
+        pass
+
 
     fig.update_yaxes(
     title_text=str(chart_spec.get("unit", "")),
@@ -2096,7 +2125,7 @@ def render_line_chart(
     )
     fig.update_xaxes(
     title_text="",
-    tickangle=-90,
+    tickangle=0,
 )
     fig.update_yaxes(title_text="")
     render_expandable_plotly(
@@ -2243,7 +2272,7 @@ def render_forecast_section() -> None:
     )
     fig.update_xaxes(
     title_text="",
-    tickangle=-90,
+    tickangle=0,
 )
     fig.update_yaxes(title_text="Forecast value")
     render_expandable_plotly(
