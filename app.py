@@ -1321,7 +1321,6 @@ def slugify(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
     return slug or "chart"
 
-
 def render_expandable_plotly(
     fig: go.Figure,
     key: str,
@@ -1329,42 +1328,7 @@ def render_expandable_plotly(
     expanded_height: int = 820,
     compact: bool = False,
 ) -> None:
-    _spacer, expand_col = st.columns([8, 0.7] if compact else [5, 0.8])
-    with expand_col:
-        expand = st.button(
-            "↗",
-            key=f"{key}_expand",
-            help=f"Expand {title}",
-            use_container_width=True,
-        )
-
     st.plotly_chart(fig, use_container_width=True, key=key)
-
-    if not expand:
-        return
-
-    open_plotly_dialog(fig, key=key, title=title, expanded_height=expanded_height)
-
-
-def open_plotly_dialog(
-    fig: go.Figure,
-    key: str,
-    title: str,
-    expanded_height: int,
-) -> None:
-    dialog = getattr(st, "dialog", None) or getattr(st, "experimental_dialog", None)
-    if dialog is None:
-        st.info("Use the chart toolbar to open Plotly's fullscreen view.")
-        return
-
-    @dialog(title, width="large")
-    def expanded_chart() -> None:
-        expanded_fig = go.Figure(fig)
-        expanded_fig.update_layout(height=expanded_height)
-        st.plotly_chart(expanded_fig, use_container_width=True, key=f"{key}_expanded")
-
-    expanded_chart()
-
 
 def title_with_last_period(title: str, series_items: list[tuple[str, pd.Series]]) -> str:
     period = latest_series_period(series_items)
