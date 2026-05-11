@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hmac
+import html
 import io
 import pickle
 import re
@@ -8,6 +9,7 @@ from pathlib import Path
 from typing import Any
 import os
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -205,10 +207,27 @@ MACRO_CHART_LABELS = {
     "mse1.png": "MSE TOP 20",
 }
 
+CPI_COMPONENTS = [
+    ("food", "Food"),
+    ("alco", "Alcohol and tobacco"),
+    ("clot", "Clothing"),
+    ("elec", "Housing and utilities"),
+    ("furn", "Furnishings"),
+    ("heal", "Health"),
+    ("tran", "Transport"),
+    ("comm", "Communication"),
+    ("recr", "Recreation"),
+    ("educ", "Education"),
+    ("hote", "Restaurants and hotels"),
+    ("insu", "Insurance"),
+    ("oth", "Other"),
+]
+
 PLOTLY_MACRO_SECTIONS = {
-    "Real Economy": [
+    "Real Economy and Inflation": [
         {
             "title": "Real Economy",
+            "subsection": "Real Economy",
             "layout": "2x2",
             "charts": [
                 {
@@ -292,6 +311,7 @@ PLOTLY_MACRO_SECTIONS = {
         },
         {
             "title": "Nominal GDP",
+            "subsection": "Real Economy",
             "layout": "2x2",
             "charts": [
                 {
@@ -315,37 +335,106 @@ PLOTLY_MACRO_SECTIONS = {
 
             ],
         },
-    ],
-    "Inflation and Prices": [
         {
-            "title": "Headline Inflation",
-            "dataset": "Monthly",
-            "unit": "%",
-            "lines": [
-                {"column": "cpi", "label": "YoY", "transform": "yoy", "lag": 12},
-                {"column": "cpi", "label": "MoM", "transform": "pct_change", "lag": 1},
-                {"column": "cpi", "label": "3-month annualized", "transform": "annualized_pct_change", "lag": 3, "annualizer": 4},
+            "title": "Inflation Overview",
+            "subsection": "Inflation and Prices",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Headline Inflation",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [
+                        {"column": "cpi", "label": "YoY", "transform": "yoy", "lag": 12},
+                        {"column": "cpi", "label": "MoM", "transform": "pct_change", "lag": 1},
+                        {"column": "cpi", "label": "3-month annualized", "transform": "annualized_pct_change", "lag": 3, "annualizer": 4},
+                    ],
+                },
+                {
+                    "title": "Food and non-food inflation (YoY)",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [
+                        {"column": "cpi_food", "label": "Food", "transform": "yoy", "lag": 12},
+                        {"column": "cpi_nonfood_yoy", "label": "Non-food"},
+                        {"column": "cpi_yoy", "label": "Headline"},
+                    ],
+                },
+                {
+                    "title": "Food and non-food inflation (MoM)",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [
+                        {"column": "cpi_food", "label": "Food", "transform": "pct_change", "lag": 1},
+                        {"column": "cpi_nonfood_mom", "label": "Non-food"},
+                        {"column": "cpi_mom", "label": "Headline"},
+                    ],
+                },
+                {
+                    "title": "Selected CPI Components (YoY)",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [
+                        {"column": "cpi_food", "label": "Food", "transform": "yoy", "lag": 12},
+                        {"column": "cpi_elec", "label": "Housing and utilities", "transform": "yoy", "lag": 12},
+                        {"column": "cpi_clot", "label": "Clothing", "transform": "yoy", "lag": 12},
+                        {"column": "cpi_tran", "label": "Transport", "transform": "yoy", "lag": 12},
+                        {"column": "cpi_hote", "label": "Restaurants and hotels", "transform": "yoy", "lag": 12},
+                    ],
+                },
             ],
         },
         {
-            "title": "Inflation by Main Components",
-            "dataset": "Monthly",
-            "unit": "%",
-            "lines": [
-                {"column": "cpi_food", "label": "Food", "transform": "yoy", "lag": 12},
-                {"column": "cpi_nonfood", "label": "Non-food", "transform": "yoy", "lag": 12},
-                {"column": "cpi", "label": "Headline", "transform": "yoy", "lag": 12},
+            "title": "Inflation Decomposition",
+            "subsection": "Inflation and Prices",
+            "layout": "2x2",
+            "weight_note": True,
+            "charts": [
+                {
+                    "title": "Inflation decomposition (YoY)",
+                    "dataset": "Monthly",
+                    "unit": "percentage points",
+                    "bars": [
+                        {"column": f"cpi_yoy_{code}_contrib", "label": label, "component_code": code}
+                        for code, label in CPI_COMPONENTS
+                    ],
+                    "lines": [{"column": "cpi_yoy", "label": "Headline inflation"}],
+                },
+                {
+                    "title": "Inflation decomposition (MoM)",
+                    "dataset": "Monthly",
+                    "unit": "percentage points",
+                    "bars": [
+                        {"column": f"cpi_mom_{code}_contrib", "label": label, "component_code": code}
+                        for code, label in CPI_COMPONENTS
+                    ],
+                    "lines": [{"column": "cpi_mom", "label": "Headline inflation"}],
+                },
             ],
         },
         {
-            "title": "Selected CPI Components",
-            "dataset": "Monthly",
-            "unit": "%",
-            "lines": [
-                {"column": "cpi_food", "label": "Food", "transform": "yoy", "lag": 12},
-                {"column": "cpi_tran", "label": "Transport", "transform": "yoy", "lag": 12},
-                {"column": "cpi_hote", "label": "Restaurants and hotels", "transform": "yoy", "lag": 12},
-                {"column": "cpi_educ", "label": "Education", "transform": "yoy", "lag": 12},
+            "title": "Inflation Relative Prices",
+            "subsection": "Inflation and Prices",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Relative prices (100*log, 11M01=0)",
+                    "dataset": "Monthly",
+                    "lines": [
+                        {"column": "l_rp_nff", "label": "Non-food / food"},
+                        {"column": "l_rp_f", "label": "Food / CPI"},
+                        {"column": "l_rp_nf", "label": "Non-food / CPI"},
+                    ],
+                },
+                {
+                    "title": "CPI levels (100*log, 11M01=0)",
+                    "dataset": "Monthly",
+                    "lines": [
+                        {"column": "l_cpi_nf", "label": "Non-food"},
+                        {"column": "l_cpi_f", "label": "Food"},
+                        {"column": "l_cpi", "label": "CPI"},
+                    ],
+                },
             ],
         },
     ],
@@ -551,14 +640,11 @@ PLOTLY_MACRO_SECTIONS = {
 
 
 SECTION_SUMMARIES = {
-    "Real Economy": """
+    "Real Economy and Inflation": """
 Mining growth continued to be driven by coal and copper production,
 while agriculture recovered further following the severe dzud-related
 weakness in previous years. Real GDP growth reached 6.8% in 2025.
 Nominal GDP increased to USD 25.4 bn, equivalent to MNT 89.9 tn.
-""",
-
-    "Inflation and Prices": """
 Inflation pressures remain elevated, especially in food and selected
 service categories. Monthly momentum has eased somewhat, but underlying
 price dynamics are still above historical averages.
@@ -637,8 +723,21 @@ SECTOR_COLORS = {
     "Net taxes": "#d62728",
 }
 
+CPI_COMPONENT_COLORS = {
+    label: color
+    for (_code, label), color in zip(CPI_COMPONENTS, SECTOR_COLORS.values())
+}
+CPI_COMPONENT_COLORS.update(
+    {
+        "Restaurants and hotels": "#98df8a",
+        "Insurance": "#aec7e8",
+        "Other": "#ffbb78",
+    }
+)
+
 LINE_COLORS = {
     "GDP growth": "#111827",
+    "Headline inflation": "#111827",
 }
 
 
@@ -685,7 +784,7 @@ def require_login() -> dict[str, str]:
     if os.getenv("STREAMLIT_RUNTIME") != "cloud":
         return {
             "email": "local",
-            "name": "Local User",
+            "name": "Sugarkhuu's friend",
             "role": "admin",
         }
 
@@ -819,6 +918,14 @@ def inject_css() -> None:
         padding-top: 2rem;
         padding-bottom: 2rem;
     }
+    .stApp {
+        background: #f4f6f8;
+    }
+    [data-testid="stExpander"] {
+        background: #ffffff;
+        border: 1px solid #e1e6ee;
+        border-radius: 8px;
+    }
     [data-testid="stMetric"] {
         background: #ffffff;
         border: 1px solid #e4e8ee;
@@ -840,12 +947,59 @@ def inject_css() -> None:
         color: #667085;
         font-size: 0.9rem;
     }
+    .section-subtitle {
+        color: #4b5563;
+        font-size: 1.12rem;
+        font-weight: 650;
+        letter-spacing: 0;
+        margin: 0.25rem 0 0.8rem;
+    }
     div[data-testid="stDialog"] div[role="dialog"] {
         width: min(96vw, 1500px);
         max-width: 96vw;
     }
     div[data-testid="stDialog"] div[role="dialog"] > div {
         max-height: 92vh;
+    }
+    .weight-note {
+        background: #f8fafc;
+        border: 1px solid #e4e8ee;
+        border-radius: 8px;
+        padding: 0.9rem 1rem;
+        margin-top: 0.4rem;
+    }
+    .weight-note-title {
+        color: #1f2a37;
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 0.65rem;
+    }
+    .weight-chip-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+    }
+    .weight-chip {
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #d7dee8;
+        border-radius: 999px;
+        color: #344054;
+        display: inline-flex;
+        font-size: 0.82rem;
+        gap: 0.35rem;
+        padding: 0.28rem 0.55rem;
+        white-space: nowrap;
+    }
+    .weight-dot {
+        border-radius: 999px;
+        display: inline-block;
+        height: 0.58rem;
+        width: 0.58rem;
+    }
+    .weight-value {
+        color: #111827;
+        font-weight: 700;
     }
 </style>
 """,
@@ -1162,9 +1316,17 @@ def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
                     unsafe_allow_html=True,
                 )
     
+            current_subsection = ""
             for chart_index, chart_spec in enumerate(chart_specs):
                 if chart_index:
                     st.divider()
+                subsection = str(chart_spec.get("subsection") or "")
+                if subsection and subsection != current_subsection:
+                    st.markdown(
+                        f"<div class='section-subtitle'>{html.escape(subsection)}</div>",
+                        unsafe_allow_html=True,
+                    )
+                    current_subsection = subsection
                 chart_key_prefix = f"{index}_{chart_index}_{slugify(section_name)}"
                 if chart_spec.get("layout") == "2x2":
                     render_macro_plotly_page(macro_data, chart_spec, windows, chart_key_prefix)
@@ -1210,6 +1372,10 @@ def render_macro_plotly_page(
 
     if not has_chart:
         st.info(f"No available series for {page_spec.get('title', 'this page')}.")
+        return
+
+    if page_spec.get("weight_note"):
+        render_cpi_weight_note(macro_data)
 
 
 def render_macro_plotly_chart(
@@ -1230,6 +1396,47 @@ def render_macro_plotly_chart(
         key=chart_key,
         title=chart_title,
         expanded_height=760,
+    )
+
+
+def render_cpi_weight_note(macro_data: dict[str, pd.DataFrame]) -> None:
+    monthly = macro_data.get("Monthly")
+    if monthly is None or monthly.empty:
+        return
+
+    weight_columns = [f"cpi_w_{code}" for code, _label in CPI_COMPONENTS]
+    existing = [column for column in weight_columns if column in monthly.columns]
+    if not existing:
+        return
+
+    weights = monthly[existing].apply(pd.to_numeric, errors="coerce").dropna(how="all")
+    if weights.empty:
+        return
+
+    latest = weights.iloc[-1]
+    period = str(weights.index[-1])
+    chips = []
+    for code, label in CPI_COMPONENTS:
+        value = latest.get(f"cpi_w_{code}")
+        if pd.isna(value):
+            continue
+        color = CPI_COMPONENT_COLORS.get(label, "#98a2b3")
+        chips.append(
+            "<span class='weight-chip'>"
+            f"<span class='weight-dot' style='background:{color}'></span>"
+            f"{html.escape(label)} <span class='weight-value'>{float(value):.1f}%</span>"
+            "</span>"
+        )
+
+    if not chips:
+        return
+
+    st.markdown(
+        "<div class='weight-note'>"
+        f"<div class='weight-note-title'>CPI basket weights, latest available: {html.escape(period)}</div>"
+        f"<div class='weight-chip-wrap'>{''.join(chips)}</div>"
+        "</div>",
+        unsafe_allow_html=True,
     )
 
 
@@ -1279,7 +1486,7 @@ def build_macro_plotly_chart_figure(
                 x=x_values,
                 y=chart_frame[label],
                 name=label,
-                marker_color=SECTOR_COLORS.get(label),
+                marker_color=chart_color(label, "bar"),
             )
         )
 
@@ -1292,7 +1499,7 @@ def build_macro_plotly_chart_figure(
                 mode="lines",
                 line=dict(
                     width=2.2,
-                    color=LINE_COLORS.get(label),
+                    color=chart_color(label, "line"),
                 ),
             )
         )
@@ -1320,6 +1527,13 @@ def build_macro_plotly_chart_figure(
 def slugify(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
     return slug or "chart"
+
+
+def chart_color(label: str, trace_type: str) -> str | None:
+    if trace_type == "line":
+        return LINE_COLORS.get(label)
+    return SECTOR_COLORS.get(label) or CPI_COMPONENT_COLORS.get(label)
+
 
 def render_expandable_plotly(
     fig: go.Figure,
@@ -1373,7 +1587,13 @@ def build_chart_series(
 def transformed_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series | None:
     base = base_series(frame, series_spec)
     if base is None:
-        return derived_real_economy_series(frame, series_spec)
+        derived = derived_real_economy_series(frame, series_spec)
+        if derived is not None:
+            return derived
+        derived = derived_cpi_contribution_series(frame, series_spec)
+        if derived is not None:
+            return derived
+        return derived_cpi_log_series(frame, series_spec)
 
     transform = str(series_spec.get("transform") or "level")
     lag = int(series_spec.get("lag") or 1)
@@ -1488,6 +1708,59 @@ def derived_real_economy_series(frame: pd.DataFrame, series_spec: dict[str, Any]
         return pd.to_numeric(frame["gdp_nom"], errors="coerce") / 1e6
 
     return None
+
+
+def derived_cpi_contribution_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series | None:
+    column = str(series_spec.get("column") or "")
+    match = re.fullmatch(r"cpi_(yoy|mom)_([a-z_]+)_contrib", column)
+    if not match:
+        return None
+
+    frequency, component = match.groups()
+    weight_column = f"cpi_w_{component}"
+    component_column = f"cpi_{component}"
+    if weight_column not in frame.columns or component_column not in frame.columns:
+        return None
+
+    lag = 12 if frequency == "yoy" else 1
+    weights = pd.to_numeric(frame[weight_column], errors="coerce") / 100
+    component_change = pd.to_numeric(frame[component_column], errors="coerce").pct_change(lag, fill_method=None) * 100
+    return weights * component_change
+
+
+def derived_cpi_log_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series | None:
+    column = str(series_spec.get("column") or "")
+    required = {"cpi", "cpi_food", "cpi_nonfood"}
+    if column not in {"l_rp_nff", "l_rp_f", "l_rp_nf", "l_cpi_nf", "l_cpi_f", "l_cpi"}:
+        return None
+    if not required.issubset(frame.columns):
+        return None
+
+    cpi = pd.to_numeric(frame["cpi"], errors="coerce")
+    food = pd.to_numeric(frame["cpi_food"], errors="coerce")
+    nonfood = pd.to_numeric(frame["cpi_nonfood"], errors="coerce")
+
+    if column == "l_rp_nff":
+        result = 100 * np.log(nonfood / food)
+    elif column == "l_rp_f":
+        result = 100 * np.log(food / cpi)
+    elif column == "l_rp_nf":
+        result = 100 * np.log(nonfood / cpi)
+    elif column == "l_cpi_nf":
+        result = 100 * np.log(nonfood)
+    elif column == "l_cpi_f":
+        result = 100 * np.log(food)
+    else:
+        result = 100 * np.log(cpi)
+
+    base_period = "11M01"
+    if base_period in result.index and not pd.isna(result.loc[base_period]):
+        return result - result.loc[base_period]
+
+    clean = result.dropna()
+    if clean.empty:
+        return None
+    return result - clean.iloc[0]
 
 
 def diff_share_series(frame: pd.DataFrame, numerator: str, denominator: str, lag: int) -> pd.Series | None:

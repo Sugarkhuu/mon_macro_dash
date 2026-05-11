@@ -397,6 +397,25 @@ dm['gdp_nom_y'] = dm['gdp_nom'].rolling(window=12, min_periods=12).sum()
 dm['cpi_yoy'] = pct(dm.cpi,-12)
 dm['cpi_qoq'] = pct(dm.cpi,-3)*4
 dm['cpi_mom'] = pct(dm.cpi,-1)
+for ind in p_list:
+    if ind in cpi_yoy_tot_comp.columns:
+        dm['cpi_yoy_' + ind + '_contrib'] = cpi_yoy_tot_comp[ind]
+    if ind in cpi_mom_tot_comp.columns:
+        dm['cpi_mom_' + ind + '_contrib'] = cpi_mom_tot_comp[ind]
+    if ind in cpi_mom_tot_comp_sa.columns:
+        dm['cpi_mom_sa_' + ind + '_contrib'] = cpi_mom_tot_comp_sa[ind]
+dm['l_rp_nff'] = 100*np.log(dm['cpi_nonfood']/dm['cpi_food'])
+dm['l_rp_nf'] = 100*np.log(dm['cpi_nonfood']/dm['cpi'])
+dm['l_rp_f'] = 100*np.log(dm['cpi_food']/dm['cpi'])
+dm['l_rp_nff'] = dm['l_rp_nff'] - dm['l_rp_nff']['11M01']
+dm['l_rp_nf'] = dm['l_rp_nf'] - dm['l_rp_nf']['11M01']
+dm['l_rp_f'] = dm['l_rp_f'] - dm['l_rp_f']['11M01']
+dm['l_cpi_nf'] = 100*np.log(dm['cpi_nonfood'])
+dm['l_cpi_f'] = 100*np.log(dm['cpi_food'])
+dm['l_cpi'] = 100*np.log(dm['cpi'])
+dm['l_cpi_nf'] = dm['l_cpi_nf'] - dm['l_cpi_nf']['11M01']
+dm['l_cpi_f'] = dm['l_cpi_f'] - dm['l_cpi_f']['11M01']
+dm['l_cpi'] = dm['l_cpi'] - dm['l_cpi']['11M01']
 
 # FX
 dm['usd_mnt_yoy'] = pct(dm.usd_mnt,-12)
@@ -1072,7 +1091,7 @@ doPlot(line1 = dm['l_rp_nff'],
        line2 = dm['l_rp_nf'],
        line3 = dm['l_rp_f'],
        title = 'Relative prices (100*log, 11M01=0), last: ' + get(dm["cpi"],'last'),
-       leg   = ['Nonfood/Food','Food/CPI','Nonfood/CPI'],
+       leg   = ['Nonfood/Food','Nonfood/CPI','Food/CPI'],
        rng   = [firstM])
 plt.subplot(gs21[1])
 doPlot(line1 = dm['l_cpi_nf'],
