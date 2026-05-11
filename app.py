@@ -43,6 +43,12 @@ QUARTERLY_METRICS = [
     ("hh_exp_inc", "Income / Expense", "%", "pp"),
 ]
 
+YEARLY_METRICS = [
+    ("gdp_y_growth", "GDP Growth", "%", "pp"),
+    ("gdp_nom_pc", "GDP per Capita", "MNT", "MNT"),
+    ("gdp_nom_pc_usd", "GDP per Capita", "USD", "USD"),
+]
+
 SAMPLE_ANALYSIS = {
     "2026M04": {
         "title": "April 2026 Macro Update",
@@ -286,11 +292,27 @@ PLOTLY_MACRO_SECTIONS = {
         },
         {
             "title": "Nominal GDP",
-            "dataset": "Yearly",
-            "unit": "tn MNT / bn USD",
-            "lines": [
-                {"column": "gdp_nom_tn", "label": "MNT, tn"},
-                {"column": "gdp_nom_usd", "label": "USD, bn"},
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Nominal GDP",
+                    "dataset": "Yearly",
+                    "unit": "tn MNT / bn USD",
+                    "lines": [
+                        {"column": "gdp_nom_tn", "label": "MNT, tn"},
+                        {"column": "gdp_nom_usd", "label": "USD, bn"},
+                    ],
+                },
+                {
+                    "title": "Nominal GDP per capita",
+                    "dataset": "Yearly",
+                    "unit": "MNT / USD",
+                    "lines": [
+                        {"column": "gdp_nom_pc", "label": "MNT per capita, mn"},
+                        {"column": "gdp_nom_pc_usd", "label": "USD per capita, th"},
+                    ],
+                },
+
             ],
         },
     ],
@@ -598,6 +620,8 @@ LABEL_OVERRIDES = {
     "hh_exp_inc": "Household income / expense",
     "hh_inc_yoy": "Household income YoY",
     "hh_exp_yoy": "Household expense YoY",
+    "gdp_nom_pc": "GDP per capita, MNT",
+    "gdp_nom_pc_usd": "GDP per capita, USD",
 }
 
 SECTOR_COLORS = {
@@ -840,6 +864,7 @@ def load_macro_data(path: str, _mtime: float) -> dict[str, pd.DataFrame]:
         return {}
 
     with data_path.open("rb") as handle:
+
         daily, monthly, quarterly, yearly = pickle.load(handle)
 
     return {
@@ -1070,6 +1095,12 @@ def render_overview(
         st.subheader("Quarterly Snapshot")
         render_metric_grid(quarterly_ts, QUARTERLY_METRICS)
 
+    yearly_data = macro_data.get("Yearly", pd.DataFrame())
+
+    if yearly_data is not None and not yearly_data.empty:
+        st.subheader("Yearly Snapshot")
+        render_metric_grid(yearly_data, YEARLY_METRICS)
+        
     render_plotly_macro_sections(macro_data)
 
     # with st.expander("Interactive Indicator Trends", expanded=False):
@@ -1578,7 +1609,11 @@ def render_metric_grid(
     if not existing:
         return
 
-    columns = st.columns(min(3, len(existing)) if len(existing) <= 3 else 6)
+    if len(existing) <= 3:
+        columns = st.columns([1, 1, 1, 4])[: len(existing)]
+    else:
+        columns = st.columns(6)
+
     for index, (variable, label, suffix, delta_suffix) in enumerate(existing):
         value, previous, period = latest_values(frame[variable])
         delta = value - previous if value is not None and previous is not None else None
