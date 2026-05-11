@@ -741,6 +741,99 @@ LINE_COLORS = {
 }
 
 
+LANGUAGES = {"EN": "en", "MN": "mn"}
+LANGUAGE_LABELS = {value: key for key, value in LANGUAGES.items()}
+
+UI_TEXT = {
+    "en": {
+        "title": "Mongolian Macroeconomic Dashboard",
+        "overview": "Overview",
+        "updates": "Updates",
+        "forecasts": "Forecasts",
+        "data_explorer": "Data Explorer",
+        "archive": "Archive",
+        "monthly_snapshot": "Monthly Snapshot",
+        "quarterly_snapshot": "Quarterly Snapshot",
+        "yearly_snapshot": "Yearly Snapshot",
+        "macro_charts": "Macro Charts",
+        "monthly_periods": "Monthly periods",
+        "quarterly_periods": "Quarterly periods",
+        "expand_all": "Expand all macro chart sections",
+        "signed_in_as": "Signed in as",
+        "sign_out": "Sign out",
+        "language": "Language / Хэл",
+    },
+    "mn": {
+        "title": "Монголын макро эдийн засгийн самбар",
+        "overview": "Тойм",
+        "updates": "Шинэчлэл",
+        "forecasts": "Төсөөлөл",
+        "data_explorer": "Өгөгдөл харах",
+        "archive": "Архив",
+        "monthly_snapshot": "Сарын үзүүлэлтүүд",
+        "quarterly_snapshot": "Улирлын үзүүлэлтүүд",
+        "yearly_snapshot": "Жилийн үзүүлэлтүүд",
+        "macro_charts": "Макро графикууд",
+        "monthly_periods": "Сарын тоо",
+        "quarterly_periods": "Улирлын тоо",
+        "expand_all": "Бүх хэсгийг дэлгэх",
+        "signed_in_as": "Нэвтэрсэн хэрэглэгч",
+        "sign_out": "Гарах",
+        "language": "Language / Хэл",
+    },
+}
+
+TRANSLATIONS_MN = {
+    "Real Economy and Inflation": "Бодит эдийн засаг ба инфляц",
+    "Real Economy": "Бодит эдийн засаг",
+    "Inflation and Prices": "Инфляц ба үнэ",
+    "Exchange Rate": "Валютын ханш",
+    "Balance of Payments and Trade": "Төлбөрийн тэнцэл ба гадаад худалдаа",
+    "Interest Rates": "Хүү",
+    "Bank and Money Supply": "Банк ба мөнгөний нийлүүлэлт",
+    "Fiscal Sector": "Төсвийн сектор",
+    "Socio-economic and Other": "Нийгэм-эдийн засаг ба бусад",
+
+    "GDP Growth": "ДНБ-ий өсөлт",
+    "GDP per Capita": "Нэг хүнд ногдох ДНБ",
+    "Inflation YoY": "Инфляц, жилийн",
+    "Policy Rate": "Бодлогын хүү",
+    "Credit YoY": "Зээлийн өсөлт",
+    "FX Reserves": "Валютын нөөц",
+
+    "Agriculture": "Хөдөө аж ахуй",
+    "Mining": "Уул уурхай",
+    "Manufacturing": "Боловсруулах үйлдвэрлэл",
+    "Electricity": "Цахилгаан",
+    "Construction": "Барилга",
+    "Trade": "Худалдаа",
+    "Transport": "Тээвэр",
+    "Communication": "Холбоо",
+    "Other services": "Бусад үйлчилгээ",
+    "Net taxes": "Цэвэр татвар",
+    "GDP growth": "ДНБ-ий өсөлт",
+
+    "Food": "Хүнс",
+    "Non-food": "Хүнсний бус",
+    "Headline": "Ерөнхий",
+    "Headline inflation": "Ерөнхий инфляц",
+    "Housing and utilities": "Орон сууц, хэрэглээний үйлчилгээ",
+    "Clothing": "Хувцас",
+    "Restaurants and hotels": "Зоогийн газар, зочид буудал",
+}
+
+def current_lang() -> str:
+    return st.session_state.get("lang", "en")
+
+def ui(key: str) -> str:
+    return UI_TEXT.get(current_lang(), UI_TEXT["en"]).get(key, key)
+
+def tr(text: Any) -> str:
+    value = str(text)
+    return TRANSLATIONS_MN.get(value, value) if current_lang() == "mn" else value
+
+
+
 
 def main() -> None:
     st.set_page_config(
@@ -751,6 +844,8 @@ def main() -> None:
     )
     inject_css()
     user = require_login()
+    if "lang" not in st.session_state:
+        st.session_state["lang"] = "en"
 
     macro_data = load_macro_data(str(DATA_PICKLE), file_mtime(DATA_PICKLE))
     indicator_frames = build_indicator_frames(macro_data)
@@ -761,7 +856,7 @@ def main() -> None:
     render_header(macro_data, monthly_ts, quarterly_ts, user)
 
     overview_tab, updates_tab, forecast_tab, explorer_tab, archive_tab = st.tabs(
-        ["Overview", "Updates", "Forecasts", "Data Explorer", "Archive"]
+        [ui("overview"), ui("updates"), ui("forecasts"), ui("data_explorer"), ui("archive")]
     )
 
     with overview_tab:
@@ -801,7 +896,7 @@ def require_login() -> dict[str, str]:
             "role": st.session_state.get("role", "viewer"),
         }
 
-    st.title("Mongolian Macroeconomic Dashboard")
+    st.title(ui("title"))
     left, middle, right = st.columns([1, 1.1, 1])
     with middle:
         st.subheader("Sign in")
@@ -1195,12 +1290,25 @@ def render_header(
     quarterly_ts: pd.DataFrame,
     user: dict[str, str],
 ) -> None:
-    title_col, action_col = st.columns([5, 1])
+    
+    title_col, lang_col, action_col = st.columns([5, 0.5, 0.8])
+
     with title_col:
-        st.title("Mongolian Macroeconomic Dashboard")
+        st.title(ui("title"))
+
+    with lang_col:
+        current = current_lang()
+        next_lang = "mn" if current == "en" else "en"
+        button_label = "EN" if current == "en" else "MN"
+
+        if st.button(button_label, key="language_toggle", use_container_width=True):
+            st.session_state["lang"] = next_lang
+            st.rerun()
+
     with action_col:
-        st.caption(f"Signed in as {user['name']}")
-        if st.button("Sign out", use_container_width=True):
+        st.caption(f"{ui('signed_in_as')}: {user['name']}")
+
+        if st.button(ui("sign_out"), use_container_width=True):
             sign_out()
             st.rerun()
 
@@ -1242,30 +1350,24 @@ def render_overview(
         return
 
     if not monthly_ts.empty:
-        st.subheader("Monthly Snapshot")
+        st.subheader(ui("monthly_snapshot"))
         render_metric_grid(monthly_ts, MONTHLY_METRICS)
 
     if not quarterly_ts.empty:
-        st.subheader("Quarterly Snapshot")
+        st.subheader(ui("quarterly_snapshot"))
         render_metric_grid(quarterly_ts, QUARTERLY_METRICS)
 
     yearly_data = macro_data.get("Yearly", pd.DataFrame())
 
     if yearly_data is not None and not yearly_data.empty:
-        st.subheader("Yearly Snapshot")
+        st.subheader(ui("yearly_snapshot"))
         render_metric_grid(yearly_data, YEARLY_METRICS)
         
     render_plotly_macro_sections(macro_data)
 
-    # with st.expander("Interactive Indicator Trends", expanded=False):
-    #     if not monthly_ts.empty:
-    #         render_chart_section("Monthly Trends", monthly_ts, MONTHLY_CHARTS, default_observations=60)
-    #     if not quarterly_ts.empty:
-    #         render_chart_section("Quarterly Trends", quarterly_ts, QUARTERLY_CHARTS, default_observations=36)
-
 
 def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
-    st.subheader("Macro Charts")
+    st.subheader(ui("macro_charts"))
 
     if not macro_data:
         st.info("No macro dataset found. Run the data pipeline to create `data/macro_data.pickle`.")
@@ -1275,16 +1377,16 @@ def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
     monthly_window = control_cols[0].slider(
         "Monthly periods",
         min_value=12,
-        max_value=180,
-        value=72,
-        step=6,
+        max_value=240,
+        value=120,
+        step=1,
     )
     quarterly_window = control_cols[1].slider(
         "Quarterly periods",
         min_value=8,
         max_value=80,
         value=40,
-        step=4,
+        step=1,
     )
     expand_all = control_cols[2].checkbox("Expand all macro chart sections", value=False)
 
@@ -1298,7 +1400,7 @@ def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
     for index, (section_name, chart_specs) in enumerate(PLOTLY_MACRO_SECTIONS.items()):
 
         with st.expander(
-            section_name.upper(),
+            tr(section_name).upper(),
             expanded=expand_all or index == 0,
         ):
             summary = SECTION_SUMMARIES.get(section_name)
@@ -1323,7 +1425,7 @@ def render_plotly_macro_sections(macro_data: dict[str, pd.DataFrame]) -> None:
                 subsection = str(chart_spec.get("subsection") or "")
                 if subsection and subsection != current_subsection:
                     st.markdown(
-                        f"<div class='section-subtitle'>{html.escape(subsection)}</div>",
+                        f"<div class='section-subtitle'>{html.escape(tr(subsection))}</div>",
                         unsafe_allow_html=True,
                     )
                     current_subsection = subsection
@@ -1463,7 +1565,7 @@ def build_macro_plotly_chart_figure(
     chart_frame = pd.concat({label: series for label, series in all_series}, axis=1)
     chart_frame = chart_frame.apply(pd.to_numeric, errors="coerce").dropna(how="all").tail(observations)
 
-    if str(chart_spec.get("title", "")) == "Real GDP decomposition (shares)":
+    if tr(str(chart_spec.get("title", ""))) == "Real GDP decomposition (shares)":
         bar_labels = [label for label, _series in bars]
         bar_totals = chart_frame[bar_labels].sum(axis=1, min_count=1)
 
@@ -1476,7 +1578,7 @@ def build_macro_plotly_chart_figure(
     if chart_frame.empty:
         return None
 
-    chart_title = title_with_last_period(str(chart_spec.get("title", "")), all_series)
+    chart_title = title_with_last_period(tr(str(chart_spec.get("title", ""))), all_series)
     x_values, x_title = chart_x_values(chart_frame.index)
     fig = go.Figure()
 
@@ -1485,7 +1587,7 @@ def build_macro_plotly_chart_figure(
             go.Bar(
                 x=x_values,
                 y=chart_frame[label],
-                name=label,
+                name=tr(label),
                 marker_color=chart_color(label, "bar"),
             )
         )
@@ -1495,7 +1597,7 @@ def build_macro_plotly_chart_figure(
             go.Scatter(
                 x=x_values,
                 y=chart_frame[label],
-                name=label,
+                name=tr(label),
                 mode="lines",
                 line=dict(
                     width=2.2,
@@ -1508,15 +1610,32 @@ def build_macro_plotly_chart_figure(
         title=dict(text=chart_title, font=dict(size=title_size)),
         template="plotly_white",
         height=height,
-        margin=dict(l=12, r=12, t=52, b=16),
+        margin=dict(l=12, r=12, t=52, b=70),
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=legend_y, xanchor="left", x=0),
+        legend=dict(orientation="h", yanchor="top", y=-0.3, xanchor="left", x=0),
         barmode="relative",
     )
     fig.update_xaxes(
     title_text=x_title,
     tickangle=-90,
 )
+
+    original_labels = list(chart_frame.index.astype(str))
+
+    if all(re.fullmatch(r"\d{2}M\d{2}", value) for value in original_labels):
+        tickvals = [
+            label
+            for label in original_labels
+            if int(label[-2:]) in {3, 6, 9, 12} or label == original_labels[-1]
+        ]
+
+        fig.update_xaxes(
+            type="category",
+            tickmode="array",
+            tickvals=tickvals,
+            ticktext=tickvals,
+        )
+
     fig.update_yaxes(
     title_text=str(chart_spec.get("unit", "")),
     tickformat=".1f",
@@ -1822,13 +1941,18 @@ def quarter_period_parts(value: Any) -> tuple[int | None, int | None]:
 def chart_x_values(index: pd.Index) -> tuple[pd.Series | pd.Index, str]:
     labels = index.astype(str)
 
+    # Monthly labels: 25M01
+    if all(re.fullmatch(r"\d{2}M\d{2}", value) for value in labels):
+        return labels, ""
+
+
     # Quarterly labels: 25Q1
     if all(re.fullmatch(r"\d{2}Q[1-4]", value) for value in labels):
         return labels, ""
 
     # Yearly labels: 19Y -> 2019
     if all(re.fullmatch(r"\d{2}Y", value) for value in labels):
-        yearly_labels = [f"20{value[:2]}" for value in labels]
+        yearly_labels = [str(expand_two_digit_year(value[:2])) for value in labels]
         return yearly_labels, ""
 
     dates = index_to_datetime(index)
@@ -1856,7 +1980,7 @@ def render_metric_grid(
         value, previous, period = latest_values(frame[variable])
         delta = value - previous if value is not None and previous is not None else None
         columns[index % len(columns)].metric(
-            label=f"{label} ({period})" if period else label,
+            label=f"{tr(label)} ({period})" if period else  tr(label),
             value=format_value(value, suffix),
             delta=format_delta(delta, delta_suffix),
         )
