@@ -224,6 +224,116 @@ CPI_COMPONENTS = [
 ]
 
 PLOTLY_MACRO_SECTIONS = {
+    "Quick Indicators": [
+        {
+            "title": "Quick Macro Indicators",
+            "subsection": "Quick Indicators",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Real GDP growth",
+                    "dataset": "Quarterly",
+                    "unit": "%",
+                    "lines": [{"column": "gdp", "label": "Real GDP growth", "transform": "yoy", "lag": 4}],
+                },
+                {
+                    "title": "Nominal GDP growth",
+                    "dataset": "Quarterly",
+                    "unit": "%",
+                    "lines": [{"column": "gdp_nom", "label": "Nominal GDP growth", "transform": "yoy", "lag": 4}],
+                },
+                {
+                    "title": "MNT/USD exchange rate",
+                    "dataset": "Monthly",
+                    "unit": "MNT per USD",
+                    "lines": [{"column": "usd_mnt", "label": "USD/MNT"}],
+                },
+                {
+                    "title": "Inflation",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [{"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12}],
+                },
+            ],
+        },
+        {
+            "title": "Annual Macro Indicators",
+            "subsection": "Quick Indicators",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Real GDP growth (yearly)",
+                    "dataset": "Yearly",
+                    "unit": "%",
+                    "lines": [{"column": "gdp", "label": "Real GDP growth", "transform": "yoy", "lag": 1}],
+                },
+                {
+                    "title": "Nominal GDP growth (yearly)",
+                    "dataset": "Yearly",
+                    "unit": "%",
+                    "lines": [{"column": "gdp_nom", "label": "Nominal GDP growth", "transform": "yoy", "lag": 1}],
+                },
+                {
+                    "title": "MNT/USD exchange rate (yearly)",
+                    "dataset": "Yearly",
+                    "unit": "MNT per USD",
+                    "lines": [
+                        {"column": "usd_mnt_avg", "label": "Average"},
+                        {"column": "usd_mnt_last", "label": "Last"},
+                    ],
+                },
+                {
+                    "title": "Inflation (yearly)",
+                    "dataset": "Yearly",
+                    "unit": "%",
+                    "lines": [{"column": "cpi_last", "label": "Inflation", "transform": "yoy", "lag": 1}],
+                },
+            ],
+        },
+        {
+            "title": "Macro Linkages",
+            "subsection": "Quick Indicators",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Credit and money supply",
+                    "dataset": "Monthly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "bank_ass_credit_nfi", "label": "Banking sector credit", "transform": "yoy", "lag": 12},
+                        {"column": "ms_m2", "label": "M2", "transform": "yoy", "lag": 12},
+                    ],
+                },
+                {
+                    "title": "Inflation and money supply",
+                    "dataset": "Monthly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12},
+                        {"column": "ms_m2", "label": "M2", "transform": "yoy", "lag": 12},
+                    ],
+                },
+                {
+                    "title": "FX rate and inflation",
+                    "dataset": "Monthly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "usd_mnt", "label": "USD/MNT", "transform": "yoy", "lag": 12},
+                        {"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12},
+                    ],
+                },
+                {
+                    "title": "Inflation and policy rate",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [
+                        {"column": "cpi", "label": "Inflation", "transform": "yoy", "lag": 12},
+                        {"column": "rate_pol", "label": "Policy rate"},
+                    ],
+                },
+            ],
+        },
+    ],
     "Real Economy and Inflation": [
         {
             "title": "Real Economy",
@@ -1161,24 +1271,235 @@ PLOTLY_MACRO_SECTIONS = {
             ],
         },
     ],
-    "Socio-economic and Other": [
+    "Other Sections": [
         {
-            "title": "Wages and Household Budget",
-            "dataset": "Quarterly",
-            "unit": "%",
-            "lines": [
-                {"column": "wage_avg", "label": "Average wage YoY", "transform": "yoy", "lag": 4},
-                {"column": "wage_median", "label": "Median wage YoY", "transform": "yoy", "lag": 4},
-                {"column": "hh_inc", "label": "Household income YoY", "transform": "yoy", "lag": 4},
-                {"column": "hh_exp", "label": "Household spending YoY", "transform": "yoy", "lag": 4},
+            "title": "Household Earnings and Budget",
+            "subsection": "Households",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Household earnings",
+                    "dataset": "Quarterly",
+                    "unit": "thou. MNT",
+                    "lines": [
+                        {"column": "hh_inc", "label": "Household income", "scale": 0.001},
+                        {"column": "wage_avg", "label": "Average salary"},
+                        {"column": "wage_median", "label": "Median salary"},
+                    ],
+                },
+                {
+                    "title": "Household earnings growth",
+                    "dataset": "Quarterly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "hh_inc", "label": "Household income", "transform": "yoy", "lag": 4},
+                        {"column": "wage_avg", "label": "Average salary", "transform": "yoy", "lag": 4},
+                        {"column": "wage_median", "label": "Median salary", "transform": "yoy", "lag": 4},
+                    ],
+                },
+                {
+                    "title": "Household budget",
+                    "dataset": "Quarterly",
+                    "unit": "thou. MNT",
+                    "lines": [
+                        {"column": "hh_inc", "label": "Income", "scale": 0.001},
+                        {"column": "hh_exp", "label": "Expense", "scale": 0.001},
+                    ],
+                },
+                {
+                    "title": "Household budget growth",
+                    "dataset": "Quarterly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "hh_inc", "label": "Income", "transform": "yoy", "lag": 4},
+                        {"column": "hh_exp", "label": "Expense", "transform": "yoy", "lag": 4},
+                    ],
+                },
             ],
         },
         {
-            "title": "MSE TOP 20",
-            "dataset": "Monthly",
-            "lines": [
-                {"column": "mse_top20_avg", "label": "Index"},
-                {"column": "mse_top20_avg", "label": "YoY change, %", "transform": "yoy", "lag": 12},
+            "title": "Real Household Indicators",
+            "subsection": "Households",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Household real earnings",
+                    "dataset": "Quarterly",
+                    "lines": [
+                        {"column": "hh_inc_real", "label": "Household income"},
+                        {"column": "wage_avg_real", "label": "Average salary"},
+                        {"column": "wage_median_real", "label": "Median salary"},
+                    ],
+                },
+                {
+                    "title": "Household real earnings growth",
+                    "dataset": "Quarterly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "hh_inc_real", "label": "Household income", "transform": "yoy", "lag": 4},
+                        {"column": "wage_avg_real", "label": "Average salary", "transform": "yoy", "lag": 4},
+                        {"column": "wage_median_real", "label": "Median salary", "transform": "yoy", "lag": 4},
+                    ],
+                },
+                {
+                    "title": "Household real budget",
+                    "dataset": "Quarterly",
+                    "lines": [
+                        {"column": "hh_inc_real", "label": "Income"},
+                        {"column": "hh_exp_real", "label": "Expense"},
+                    ],
+                },
+                {
+                    "title": "Household real budget growth",
+                    "dataset": "Quarterly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "hh_inc_real", "label": "Income", "transform": "yoy", "lag": 4},
+                        {"column": "hh_exp_real", "label": "Expense", "transform": "yoy", "lag": 4},
+                    ],
+                },
+            ],
+        },
+        {
+            "title": "Consumer Loan and Car Imports",
+            "subsection": "Households and Other",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Consumer loan",
+                    "dataset": "Monthly",
+                    "unit": "tn MNT",
+                    "lines": [{"column": "hh_loan", "label": "Consumer loan", "scale": 0.000001}],
+                },
+                {
+                    "title": "Consumer loan growth",
+                    "dataset": "Monthly",
+                    "unit": "% YoY",
+                    "lines": [{"column": "hh_loan", "label": "Consumer loan", "transform": "yoy", "lag": 12}],
+                },
+                {
+                    "title": "Household budget and consumer loan growth",
+                    "dataset": "Quarterly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "hh_inc", "label": "Income", "transform": "yoy", "lag": 4},
+                        {"column": "hh_exp", "label": "Expense", "transform": "yoy", "lag": 4},
+                        {"column": "hh_loan", "label": "Consumer loan", "transform": "yoy", "lag": 4},
+                    ],
+                },
+                {
+                    "title": "Imported automobiles",
+                    "dataset": "Monthly",
+                    "unit": "thou.",
+                    "lines": [
+                        {"column": "im_auto_vol", "label": "Automobiles", "scale": 0.001},
+                        {"column": "im_auto_vol", "label": "12m average", "transform": "rolling_mean", "window": 12, "scale": 0.001},
+                    ],
+                },
+            ],
+        },
+        {
+            "title": "Selected Prices and MSE",
+            "subsection": "Prices and Market",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Imported automobiles value",
+                    "dataset": "Monthly",
+                    "unit": "thou. USD",
+                    "lines": [
+                        {"column": "im_auto", "label": "Automobiles", "scale": 0.001},
+                        {"column": "im_auto", "label": "12m average", "transform": "rolling_mean", "window": 12, "scale": 0.001},
+                    ],
+                },
+                {
+                    "title": "Flour, bread and milk prices",
+                    "dataset": "Monthly",
+                    "lines": [
+                        {"column": "price_fl_up", "label": "Flour"},
+                        {"column": "price_bread", "label": "Bread"},
+                        {"column": "price_milk_box", "label": "Milk"},
+                    ],
+                },
+                {
+                    "title": "Other food prices",
+                    "dataset": "Monthly",
+                    "lines": [
+                        {"column": "price_potato", "label": "Potato"},
+                        {"column": "price_egg", "label": "Egg"},
+                        {"column": "price_apple", "label": "Apple"},
+                    ],
+                },
+                {
+                    "title": "Petroleum prices",
+                    "dataset": "Monthly",
+                    "lines": [
+                        {"column": "price_petrol_92", "label": "AI-92"},
+                        {"column": "price_diesel", "label": "Diesel"},
+                    ],
+                },
+            ],
+        },
+        {
+            "title": "Selected Price Growth and MSE",
+            "subsection": "Prices and Market",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Flour, bread and milk prices growth",
+                    "dataset": "Monthly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "price_fl_up", "label": "Flour", "transform": "yoy", "lag": 12},
+                        {"column": "price_bread", "label": "Bread", "transform": "yoy", "lag": 12},
+                        {"column": "price_milk_box", "label": "Milk", "transform": "yoy", "lag": 12},
+                    ],
+                },
+                {
+                    "title": "Other food prices growth",
+                    "dataset": "Monthly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "price_mutton_bone", "label": "Mutton", "transform": "yoy", "lag": 12},
+                        {"column": "price_potato", "label": "Potato", "transform": "yoy", "lag": 12},
+                        {"column": "price_egg", "label": "Egg", "transform": "yoy", "lag": 12},
+                        {"column": "price_apple", "label": "Apple", "transform": "yoy", "lag": 12},
+                    ],
+                },
+                {
+                    "title": "Petroleum price growth",
+                    "dataset": "Monthly",
+                    "unit": "% YoY",
+                    "lines": [
+                        {"column": "price_petrol_92", "label": "AI-92", "transform": "yoy", "lag": 12},
+                        {"column": "price_diesel", "label": "Diesel", "transform": "yoy", "lag": 12},
+                    ],
+                },
+                {
+                    "title": "MSE TOP 20",
+                    "dataset": "Monthly",
+                    "lines": [
+                        {"column": "mse_top20_avg", "label": "Index"},
+                        {"column": "mse_top20_avg", "label": "YoY change, %", "transform": "yoy", "lag": 12},
+                    ],
+                },
+            ],
+        },
+        {
+            "title": "MSE TOP 20 Growth",
+            "subsection": "Prices and Market",
+            "dataset": "Quarterly",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "MSE TOP 20 index change",
+                    "dataset": "Monthly",
+                    "unit": "%",
+                    "lines": [
+                        {"column": "mse_top20_avg", "label": "YoY", "transform": "yoy", "lag": 12},
+                        {"column": "mse_top20_avg", "label": "MoM annualized", "transform": "annualized_pct_change", "lag": 1, "annualizer": 12},
+                    ],
+                },
             ],
         },
     ],
@@ -1186,6 +1507,13 @@ PLOTLY_MACRO_SECTIONS = {
 
 
 SECTION_SUMMARIES = {
+    "Quick Indicators": """
+The quick indicator pages collect headline growth, exchange rate,
+inflation, credit, money supply, and policy-rate signals. They are meant
+to give users the first-pass macro picture before moving into the more
+detailed sections below.
+""",
+
     "Real Economy and Inflation": """
 Mining growth continued to be driven by coal and copper production,
 while agriculture recovered further following the severe dzud-related
@@ -1215,6 +1543,13 @@ Fiscal indicators track the budget balance, revenue mobilization,
 spending pressure, and expenditure composition. Revenue and expenditure
 ratios are shown against GDP to make fiscal stance and structural
 changes easier to compare through time.
+""",
+
+    "Other Sections": """
+The final section collects household income, wages, consumer loans,
+selected retail prices, automobile imports, and market indicators that
+sit outside the core macro blocks but remain useful for regular
+monitoring.
 """,
 }
 
@@ -1449,6 +1784,26 @@ TRANSLATIONS_MN.update(
 
 TRANSLATIONS_MN.update(
     {
+        "Quick Indicators": "Шуурхай үзүүлэлтүүд",
+        "Quick Macro Indicators": "Макро шуурхай үзүүлэлтүүд",
+        "Annual Macro Indicators": "Жилийн макро үзүүлэлтүүд",
+        "Macro Linkages": "Макро уялдаа",
+        "Real GDP growth": "Бодит ДНБ-ий өсөлт",
+        "Nominal GDP growth": "Нэрлэсэн ДНБ-ий өсөлт",
+        "MNT/USD exchange rate": "USD/MNT ханш",
+        "Inflation": "Инфляц",
+        "Real GDP growth (yearly)": "Бодит ДНБ-ий өсөлт (жилээр)",
+        "Nominal GDP growth (yearly)": "Нэрлэсэн ДНБ-ий өсөлт (жилээр)",
+        "MNT/USD exchange rate (yearly)": "USD/MNT ханш (жилээр)",
+        "Inflation (yearly)": "Инфляц (жилээр)",
+        "Credit and money supply": "Зээл ба мөнгөний нийлүүлэлт",
+        "Inflation and money supply": "Инфляц ба мөнгөний нийлүүлэлт",
+        "FX rate and inflation": "Валютын ханш ба инфляц",
+        "Inflation and policy rate": "Инфляц ба бодлогын хүү",
+        "Average": "Дундаж",
+        "Last": "Сүүл",
+        "Banking sector credit": "Банкны салбарын зээл",
+        "Policy rate": "Бодлогын хүү",
         "Financial Sector, Money and Interest Rates": "Санхүүгийн сектор, мөнгө ба хүү",
         "Money Supply": "Мөнгөний нийлүүлэлт",
         "Banking Sector": "Банкны сектор",
@@ -1546,6 +1901,60 @@ TRANSLATIONS_MN.update(
         "Subsidies and transfers": "Татаас ба шилжүүлэг",
         "Wages and salaries": "Цалин хөлс",
         "Interest payments": "Хүүний төлбөр",
+    }
+)
+
+TRANSLATIONS_MN.update(
+    {
+        "Other Sections": "Бусад хэсгүүд",
+        "Household Earnings and Budget": "Өрхийн орлого ба төсөв",
+        "Households": "Өрх",
+        "Household earnings": "Өрхийн орлого",
+        "Household earnings growth": "Өрхийн орлогын өсөлт",
+        "Household budget": "Өрхийн төсөв",
+        "Household budget growth": "Өрхийн төсвийн өсөлт",
+        "Real Household Indicators": "Өрхийн бодит үзүүлэлтүүд",
+        "Household real earnings": "Өрхийн бодит орлого",
+        "Household real earnings growth": "Өрхийн бодит орлогын өсөлт",
+        "Household real budget": "Өрхийн бодит төсөв",
+        "Household real budget growth": "Өрхийн бодит төсвийн өсөлт",
+        "Consumer Loan and Car Imports": "Хэрэглээний зээл ба автомашины импорт",
+        "Households and Other": "Өрх ба бусад",
+        "Consumer loan": "Хэрэглээний зээл",
+        "Consumer loan growth": "Хэрэглээний зээлийн өсөлт",
+        "Household budget and consumer loan growth": "Өрхийн төсөв ба хэрэглээний зээлийн өсөлт",
+        "Imported automobiles": "Импортын автомашин",
+        "Selected Prices and MSE": "Сонгосон үнэ ба хөрөнгийн зах",
+        "Prices and Market": "Үнэ ба зах зээл",
+        "Imported automobiles value": "Импортын автомашины дүн",
+        "Flour, bread and milk prices": "Гурил, талх, сүүний үнэ",
+        "Other food prices": "Бусад хүнсний үнэ",
+        "Petroleum prices": "Шатахууны үнэ",
+        "Selected Price Growth and MSE": "Сонгосон үнийн өсөлт ба хөрөнгийн зах",
+        "Flour, bread and milk prices growth": "Гурил, талх, сүүний үнийн өсөлт",
+        "Other food prices growth": "Бусад хүнсний үнийн өсөлт",
+        "Petroleum price growth": "Шатахууны үнийн өсөлт",
+        "MSE TOP 20": "MSE TOP 20",
+        "MSE TOP 20 Growth": "MSE TOP 20 өсөлт",
+        "MSE TOP 20 index change": "MSE TOP 20 индексийн өөрчлөлт",
+        "Average salary": "Дундаж цалин",
+        "Median salary": "Гол медиан цалин",
+        "Income": "Орлого",
+        "Expense": "Зарлага",
+        "Automobiles": "Автомашин",
+        "12m average": "12 сарын дундаж",
+        "Flour": "Гурил",
+        "Bread": "Талх",
+        "Milk": "Сүү",
+        "Mutton": "Хонины мах",
+        "Potato": "Төмс",
+        "Egg": "Өндөг",
+        "Apple": "Алим",
+        "Diesel": "Дизель",
+        "Index": "Индекс",
+        "YoY change, %": "Жилийн өөрчлөлт, %",
+        "YoY": "Жилийн",
+        "MoM annualized": "Сарын өөрчлөлт, жилшүүлсэн",
     }
 )
 
@@ -2496,6 +2905,9 @@ def transformed_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.S
     elif transform == "rolling_yoy":
         window = int(series_spec.get("window") or lag)
         result = base.rolling(window=window, min_periods=window).sum().pct_change(lag, fill_method=None) * 100
+    elif transform == "rolling_mean":
+        window = int(series_spec.get("window") or lag)
+        result = base.rolling(window=window, min_periods=window).mean()
     elif transform == "rebase":
         base_period = str(series_spec.get("base_period") or "")
         base_value = float(series_spec.get("base_value") or 0)
