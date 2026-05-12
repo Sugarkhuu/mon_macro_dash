@@ -438,69 +438,163 @@ PLOTLY_MACRO_SECTIONS = {
             ],
         },
     ],
-    "Exchange Rate": [
+    "Foreign Sector and Exchange Rate": [
         {
             "title": "Exchange Rates",
-            "dataset": "Monthly",
-            "lines": [
-                {"column": "usd_mnt", "label": "USD/MNT"},
-                {"column": "cny_mnt", "label": "CNY/MNT"},
-                {"column": "rub_mnt", "label": "RUB/MNT"},
-                {"column": "eur_mnt", "label": "EUR/MNT"},
+            "subsection": "Exchange Rate",
+            "layout": "2x2",
+            "charts": [
+                {"title": "MNT per USD", "dataset": "Monthly", "lines": [{"column": "usd_mnt", "label": "MNT per USD"}]},
+                {"title": "MNT per CNY", "dataset": "Monthly", "lines": [{"column": "cny_mnt", "label": "MNT per CNY"}]},
+                {"title": "MNT per RUB", "dataset": "Monthly", "lines": [{"column": "rub_mnt", "label": "MNT per RUB"}]},
+                {"title": "MNT per EUR", "dataset": "Monthly", "lines": [{"column": "eur_mnt", "label": "MNT per EUR"}]},
             ],
         },
         {
-            "title": "Exchange Rate Changes",
-            "dataset": "Monthly",
-            "unit": "%",
-            "lines": [
-                {"column": "usd_mnt", "label": "USD/MNT YoY", "transform": "yoy", "lag": 12},
-                {"column": "cny_mnt", "label": "CNY/MNT YoY", "transform": "yoy", "lag": 12},
-                {"column": "usd_mnt", "label": "USD/MNT MoM", "transform": "pct_change", "lag": 1},
+            "title": "Exchange Rate Indices",
+            "subsection": "Exchange Rate",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Real Effective Exchange Rate",
+                    "dataset": "Monthly",
+                    "lines": [{"column": "reer", "label": "REER"}],
+                },
+                {
+                    "title": "Nominal exchange rates (10M01=100, 100*log)",
+                    "dataset": "Monthly",
+                    "lines": [
+                        {"column": "l_mnt_usd", "label": "MNT per USD", "transform": "rebase", "base_period": "10M01", "base_value": 100},
+                        {"column": "l_mnt_cny", "label": "MNT per CNY", "transform": "rebase", "base_period": "10M01", "base_value": 100},
+                        {"column": "l_mnt_rub", "label": "MNT per RUB", "transform": "rebase", "base_period": "10M01", "base_value": 100},
+                        {"column": "l_mnt_eur", "label": "MNT per EUR", "transform": "rebase", "base_period": "10M01", "base_value": 100},
+                    ],
+                },
             ],
-        },
-    ],
-    "Balance of Payments and Trade": [
-        {
-            "title": "Current Account",
-            "dataset": "Quarterly",
-            "unit": "mn USD",
-            "bars": [
-                {"column": "bop_ca_goods", "label": "Goods"},
-                {"column": "bop_ca_serv", "label": "Services"},
-                {"column": "bop_ca_prim", "label": "Primary income"},
-                {"column": "bop_ca_sec", "label": "Secondary income"},
-            ],
-            "lines": [{"column": "bop_ca", "label": "Current account"}],
         },
         {
             "title": "Balance of Payments",
-            "dataset": "Quarterly",
-            "unit": "mn USD",
-            "bars": [
-                {"column": "bop_ca", "label": "Current account"},
-                {"column": "bop_capa", "label": "Capital account"},
-                {"column": "bop_fa", "label": "Financial account"},
-                {"column": "bop_eo", "label": "Errors and omissions"},
+            "subsection": "Balance of Payments",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Balance of Payments",
+                    "dataset": "Quarterly",
+                    "unit": "mn USD",
+                    "bars": [
+                        {"column": "bop_ca", "label": "Current"},
+                        {"column": "bop_capa", "label": "Capital"},
+                        {"column": "bop_fa", "label": "Financial", "scale": -1},
+                        {"column": "bop_eo", "label": "Errors & omissions"},
+                        {"column": "bop", "label": "Reserves", "scale": -1},
+                    ],
+                },
+                {
+                    "title": "Current account",
+                    "dataset": "Quarterly",
+                    "unit": "mn USD",
+                    "bars": [
+                        {"column": "bop_ca_gs", "label": "Goods and services"},
+                        {"column": "bop_ca_prim", "label": "Primary income"},
+                        {"column": "bop_ca_sec", "label": "Secondary income"},
+                    ],
+                    "lines": [{"column": "bop_ca", "label": "Current account"}],
+                },
+                {
+                    "title": "Financial account",
+                    "dataset": "Quarterly",
+                    "unit": "mn USD",
+                    "bars": [
+                        {"column": "bop_fa_di", "label": "Direct", "scale": -1},
+                        {"column": "bop_fa_pi", "label": "Portfolio", "scale": -1},
+                        {"column": "bop_fa_der", "label": "Derivative", "scale": -1},
+                        {"column": "bop_fa_oth", "label": "Other", "scale": -1},
+                    ],
+                    "lines": [{"column": "bop_fa", "label": "Financial account", "scale": -1}],
+                },
             ],
-            "lines": [{"column": "bop", "label": "Overall balance"}],
         },
         {
-            "title": "Trade and Reserves",
-            "dataset": "Monthly",
-            "lines": [
-                {"column": "ex_cum", "label": "Exports, bn USD", "scale": 0.001},
-                {"column": "im_cum", "label": "Imports, bn USD", "scale": 0.001},
-                {"column": "fx_reserve", "label": "FX reserves, bn USD", "scale": 0.001},
+            "title": "Current Account Details",
+            "subsection": "Balance of Payments",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Trade balance",
+                    "dataset": "Quarterly",
+                    "unit": "mn USD",
+                    "bars": [
+                        {"column": "bop_ca_gs_cre", "label": "Export"},
+                        {"column": "bop_ca_gs_deb", "label": "Import", "scale": -1},
+                    ],
+                    "lines": [{"column": "bop_ca_gs", "label": "Trade balance"}],
+                },
+                {
+                    "title": "Primary income balance",
+                    "dataset": "Quarterly",
+                    "unit": "mn USD",
+                    "bars": [
+                        {"column": "bop_ca_prim_cre", "label": "Credit"},
+                        {"column": "bop_ca_prim_deb", "label": "Debit", "scale": -1},
+                    ],
+                    "lines": [{"column": "bop_ca_prim", "label": "Primary income"}],
+                },
+                {
+                    "title": "Secondary income balance",
+                    "dataset": "Quarterly",
+                    "unit": "mn USD",
+                    "bars": [
+                        {"column": "bop_ca_sec_cre", "label": "Credit"},
+                        {"column": "bop_ca_sec_deb", "label": "Debit", "scale": -1},
+                    ],
+                    "lines": [{"column": "bop_ca_sec", "label": "Secondary income"}],
+                },
             ],
         },
         {
-            "title": "Coal Exports",
-            "dataset": "Monthly",
-            "lines": [
-                {"column": "ex_coal_vol_cum", "label": "Volume, mn tons", "scale": 0.001},
-                {"column": "ex_coal_cum", "label": "Revenue, bn USD", "scale": 0.000001},
-                {"column": "ex_coal_p", "label": "Price, USD/ton"},
+            "title": "Foreign Trade and Reserves",
+            "subsection": "Foreign Trade and Reserves",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Exports",
+                    "dataset": "Quarterly",
+                    "unit": "bn USD",
+                    "trim_to_component_activity": True,
+                    "bars": [
+                        {"column": "ex_coal", "label": "Coal", "scale": 0.001},
+                        {"column": "ex_copper", "label": "Copper", "scale": 0.001},
+                        {"column": "ex_gold", "label": "Gold", "scale": 0.001},
+                        {"column": "ex_oil", "label": "Oil", "scale": 0.001},
+                        {"column": "ex_cashmere", "label": "Cashmere", "scale": 0.001},
+                        {"column": "ex_rest", "label": "Rest", "scale": 0.001},
+                    ],
+                    "lines": [{"column": "ex", "label": "Exports"}],
+                },
+                {
+                    "title": "Imports",
+                    "dataset": "Quarterly",
+                    "unit": "bn USD",
+                    "trim_to_component_activity": True,
+                    "bars": [
+                        {"column": "im_fuel", "label": "Fuel", "scale": 0.001},
+                        {"column": "im_veh", "label": "Vehicle", "scale": 0.001},
+                        {"column": "im_truck", "label": "Truck", "scale": 0.001},
+                        {"column": "im_elec", "label": "Electrical equipment", "scale": 0.001},
+                        {"column": "im_comm", "label": "Communication equipment", "scale": 0.001},
+                        {"column": "im_rest", "label": "Rest", "scale": 0.001},
+                    ],
+                    "lines": [{"column": "im", "label": "Imports"}],
+                },
+                {
+                    "title": "BoM FX reserves",
+                    "dataset": "Monthly",
+                    "unit": "bn USD / months",
+                    "lines": [
+                        {"column": "fx_reserve", "label": "FX reserves, bn USD", "scale": 0.001},
+                        {"column": "fx_reserve_import_months", "label": "Months of imports"},
+                    ],
+                },
             ],
         },
     ],
@@ -650,10 +744,11 @@ service categories. Monthly momentum has eased somewhat, but underlying
 price dynamics are still above historical averages.
 """,
 
-    "Exchange Rate": """
+    "Foreign Sector and Exchange Rate": """
 The exchange rate has remained relatively stable despite external
-volatility. FX dynamics continue to play an important role in imported
-inflation and reserve accumulation.
+volatility. Balance of payments, trade flows, and reserves remain key
+channels linking external demand, commodity exports, and domestic
+financial conditions.
 """,
 }
 
@@ -738,6 +833,15 @@ CPI_COMPONENT_COLORS.update(
 LINE_COLORS = {
     "GDP growth": "#111827",
     "Headline inflation": "#111827",
+    "Headline": "#111827",
+    "CPI": "#111827",
+    "YoY": "#111827",
+    "MoM": "#ff7f0e",
+    "3-month annualized": "#1f77b4",
+    "Non-food": "#7f7f7f",
+    "Non-food / food": "#7f7f7f",
+    "Food / CPI": CPI_COMPONENT_COLORS["Food"],
+    "Non-food / CPI": "#17becf",
 }
 
 
@@ -821,6 +925,61 @@ TRANSLATIONS_MN = {
     "Clothing": "Хувцас",
     "Restaurants and hotels": "Зоогийн газар, зочид буудал",
 }
+
+TRANSLATIONS_MN.update(
+    {
+        "Foreign Sector and Exchange Rate": "Гадаад сектор ба валютын ханш",
+        "Balance of Payments": "Төлбөрийн тэнцэл",
+        "Foreign Trade and Reserves": "Гадаад худалдаа ба валютын нөөц",
+        "Exchange Rates": "Валютын ханш",
+        "Exchange Rate Indices": "Валютын ханшийн индексүүд",
+        "Current Account Details": "Урсгал дансны дэлгэрэнгүй",
+        "MNT per USD": "USD/MNT",
+        "MNT per CNY": "CNY/MNT",
+        "MNT per RUB": "RUB/MNT",
+        "MNT per EUR": "EUR/MNT",
+        "Real Effective Exchange Rate": "Бодит үйлчилж буй ханш",
+        "REER": "БҮХИ",
+        "Nominal exchange rates (10M01=100, 100*log)": "Нэрлэсэн ханш (10M01=100, 100*log)",
+        "Current account": "Урсгал данс",
+        "Financial account": "Санхүүгийн данс",
+        "Trade balance": "Худалдааны тэнцэл",
+        "Primary income balance": "Анхдагч орлогын тэнцэл",
+        "Secondary income balance": "Хоёрдогч орлогын тэнцэл",
+        "Exports": "Экспорт",
+        "Imports": "Импорт",
+        "BoM FX reserves": "Төв банкны валютын нөөц",
+        "Current": "Урсгал",
+        "Capital": "Капитал",
+        "Financial": "Санхүүгийн",
+        "Errors & omissions": "Алдаа ба орхигдуулга",
+        "Reserves": "Нөөц",
+        "Goods and services": "Бараа ба үйлчилгээ",
+        "Primary income": "Анхдагч орлого",
+        "Secondary income": "Хоёрдогч орлого",
+        "Direct": "Шууд хөрөнгө оруулалт",
+        "Portfolio": "Багцын хөрөнгө оруулалт",
+        "Derivative": "Дериватив",
+        "Other": "Бусад",
+        "Export": "Экспорт",
+        "Import": "Импорт",
+        "Credit": "Кредит",
+        "Debit": "Дебит",
+        "Coal": "Нүүрс",
+        "Copper": "Зэс",
+        "Gold": "Алт",
+        "Oil": "Газрын тос",
+        "Cashmere": "Ноолуур",
+        "Rest": "Бусад",
+        "Fuel": "Шатахуун",
+        "Vehicle": "Суудлын автомашин",
+        "Truck": "Ачааны машин",
+        "Electrical equipment": "Цахилгаан тоног төхөөрөмж",
+        "Communication equipment": "Холбооны тоног төхөөрөмж",
+        "FX reserves, bn USD": "Валютын нөөц, тэрбум USD",
+        "Months of imports": "Импортын сарын тоо",
+    }
+)
 
 def current_lang() -> str:
     return st.session_state.get("lang", "en")
@@ -1563,7 +1722,14 @@ def build_macro_plotly_chart_figure(
 
     observations = int(chart_spec.get("observations") or windows.get(dataset_name, 60))
     chart_frame = pd.concat({label: series for label, series in all_series}, axis=1)
-    chart_frame = chart_frame.apply(pd.to_numeric, errors="coerce").dropna(how="all").tail(observations)
+    chart_frame = chart_frame.apply(pd.to_numeric, errors="coerce").dropna(how="all")
+    if chart_spec.get("trim_to_component_activity") and bars:
+        component_labels = [label for label, _series in bars if label != "Rest"]
+        existing_component_labels = [label for label in component_labels if label in chart_frame.columns]
+        if existing_component_labels:
+            active_components = chart_frame[existing_component_labels].abs().sum(axis=1, min_count=1)
+            chart_frame = chart_frame.loc[active_components.fillna(0) > 0]
+    chart_frame = chart_frame.tail(observations)
 
     if tr(str(chart_spec.get("title", ""))) == "Real GDP decomposition (shares)":
         bar_labels = [label for label, _series in bars]
@@ -1578,7 +1744,10 @@ def build_macro_plotly_chart_figure(
     if chart_frame.empty:
         return None
 
-    chart_title = title_with_last_period(tr(str(chart_spec.get("title", ""))), all_series)
+    chart_title = title_with_last_period(
+        tr(str(chart_spec.get("title", ""))),
+        [(label, chart_frame[label]) for label in chart_frame.columns],
+    )
     x_values, x_title = chart_x_values(chart_frame.index)
     fig = go.Figure()
 
@@ -1679,7 +1848,7 @@ def slugify(value: str) -> str:
 
 def chart_color(label: str, trace_type: str) -> str | None:
     if trace_type == "line":
-        return LINE_COLORS.get(label)
+        return LINE_COLORS.get(label) or CPI_COMPONENT_COLORS.get(label) or SECTOR_COLORS.get(label)
     return SECTOR_COLORS.get(label) or CPI_COMPONENT_COLORS.get(label)
 
 
@@ -1741,7 +1910,10 @@ def transformed_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.S
         derived = derived_cpi_contribution_series(frame, series_spec)
         if derived is not None:
             return derived
-        return derived_cpi_log_series(frame, series_spec)
+        derived = derived_cpi_log_series(frame, series_spec)
+        if derived is not None:
+            return derived
+        return derived_foreign_sector_series(frame, series_spec)
 
     transform = str(series_spec.get("transform") or "level")
     lag = int(series_spec.get("lag") or 1)
@@ -1756,6 +1928,17 @@ def transformed_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.S
     elif transform == "rolling_yoy":
         window = int(series_spec.get("window") or lag)
         result = base.rolling(window=window, min_periods=window).sum().pct_change(lag, fill_method=None) * 100
+    elif transform == "rebase":
+        base_period = str(series_spec.get("base_period") or "")
+        base_value = float(series_spec.get("base_value") or 0)
+        if base_period in base.index and not pd.isna(base.loc[base_period]):
+            anchor = base.loc[base_period]
+        else:
+            clean = base.dropna()
+            if clean.empty:
+                return None
+            anchor = clean.iloc[0]
+        result = base - anchor + base_value
     elif transform == "ratio":
         denominator = denominator_series(frame, series_spec)
         if denominator is None:
@@ -1909,6 +2092,45 @@ def derived_cpi_log_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> 
     if clean.empty:
         return None
     return result - clean.iloc[0]
+
+
+def derived_foreign_sector_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series | None:
+    column = str(series_spec.get("column") or "")
+    if column == "ex_cashmere":
+        return sum_existing_columns(frame, ["ex_cashmere_raw", "ex_cashmere_comb"])
+    if column == "ex_rest":
+        total = base_existing_column(frame, "ex")
+        components = sum_existing_columns(frame, ["ex_gold", "ex_copper", "ex_cashmere_raw", "ex_cashmere_comb", "ex_coal", "ex_oil"])
+        if total is None or components is None:
+            return None
+        return total * 1000 - components
+    if column == "im_rest":
+        total = base_existing_column(frame, "im")
+        components = sum_existing_columns(frame, ["im_fuel", "im_veh", "im_truck", "im_elec", "im_comm"])
+        if total is None or components is None:
+            return None
+        return total * 1000 - components
+    if column == "fx_reserve_import_months":
+        reserves = base_existing_column(frame, "fx_reserve")
+        imports = base_existing_column(frame, "im")
+        if reserves is None or imports is None:
+            return None
+        import_average = imports.rolling(window=12, min_periods=1).mean()
+        return (reserves / 1000).div(import_average)
+    return None
+
+
+def base_existing_column(frame: pd.DataFrame, column: str) -> pd.Series | None:
+    if column not in frame.columns:
+        return None
+    return pd.to_numeric(frame[column], errors="coerce")
+
+
+def sum_existing_columns(frame: pd.DataFrame, columns: list[str]) -> pd.Series | None:
+    existing = [column for column in columns if column in frame.columns]
+    if len(existing) != len(columns):
+        return None
+    return frame[existing].apply(pd.to_numeric, errors="coerce").sum(axis=1, min_count=1)
 
 
 def diff_share_series(frame: pd.DataFrame, numerator: str, denominator: str, lag: int) -> pd.Series | None:
