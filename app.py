@@ -1967,6 +1967,31 @@ TRANSLATIONS_MN.update(
     }
 )
 
+TRANSLATIONS_MN.update(
+    {
+        "Forecasts by Other Institutions": "Бусад байгууллагуудын төсөөлөл",
+        "Our Forecast": "Манай төсөөлөл",
+        "Scenario": "Хувилбар",
+        "Forecast Reports": "Төсөөллийн тайлангууд",
+        "Forecaster and forecast period": "Төсөөлөл гаргасан байгууллага ба хугацаа",
+        "Each option combines one forecaster and the period when that forecast was made.": "Сонголт бүр байгууллага болон тухайн төсөөлөл гарсан хугацааг хамтад нь харуулна.",
+        "Show forecast table": "Төсөөллийн хүснэгт харуулах",
+        "Select at least one forecaster-period pair.": "Ядаж нэг байгууллага-хугацааны хослол сонгоно уу.",
+        "No available forecast for": "Төсөөлөл олдсонгүй:",
+        "No forecast reports found.": "Төсөөллийн тайлан олдсонгүй.",
+        "No forecaster workbook found. Add `forecast_4casters.xlsx` to show forecast comparisons.": "`forecast_4casters.xlsx` файл олдсонгүй. Төсөөллийн харьцуулалт харуулахын тулд файлыг нэмнэ үү.",
+        "Abbreviations": "Товчлолууд",
+        "GDP (%)": "ДНБ (%)",
+        "Inflation (%)": "Инфляц (%)",
+        "USDMNT": "USD/MNT",
+        "Baseline": "Суурь",
+        "Upside": "Өөдрөг",
+        "Downside": "Сөрөг",
+        "forecast": "төсөөлөл",
+        "Forecast value": "Төсөөллийн утга",
+    }
+)
+
 def current_lang() -> str:
     return st.session_state.get("lang", "en")
 
@@ -3460,12 +3485,12 @@ def render_updates_section() -> None:
 
 
 def render_forecast_section() -> None:
-    st.subheader("Forecasts")
+    st.subheader(ui("forecasts"))
     render_forecaster_forecast_section()
 
-    st.markdown("#### Our Forecast")
+    st.markdown(f"#### {tr('Our Forecast')}")
     scenario = st.radio(
-        "Scenario",
+        tr("Scenario"),
         list(SAMPLE_FORECASTS),
         index=list(SAMPLE_FORECASTS).index("Baseline"),
         horizontal=True,
@@ -3495,15 +3520,15 @@ def render_forecast_section() -> None:
     title_text="",
     tickangle=0,
 )
-    fig.update_yaxes(title_text="Forecast value")
+    fig.update_yaxes(title_text=tr("Forecast value"))
     render_expandable_plotly(
         fig,
         key=f"forecast_chart_{scenario}",
-        title=f"{scenario} forecast",
+        title=f"{tr(scenario)} {tr('forecast')}",
         expanded_height=760,
     )
 
-    st.markdown("#### Forecast Reports")
+    st.markdown(f"#### {tr('Forecast Reports')}")
     forecast_reports = [
         FORECAST_REPORT_DIR / "forecast_base_2603.pdf",
         FORECAST_REPORT_DIR / "forecast_alt.pdf",
@@ -3512,7 +3537,7 @@ def render_forecast_section() -> None:
     ]
     render_download_list(
         [path for path in forecast_reports if path.exists()],
-        empty_message="No forecast reports found.",
+        empty_message=tr("No forecast reports found."),
         key_prefix="forecast_report",
     )
 
@@ -3523,10 +3548,10 @@ def render_forecaster_forecast_section() -> None:
         file_mtime(FORECAST_4CASTERS_PATH),
     )
     if forecasts.empty:
-        st.info("No forecaster workbook found. Add `forecast_4casters.xlsx` to show forecast comparisons.")
+        st.info(tr("No forecaster workbook found. Add `forecast_4casters.xlsx` to show forecast comparisons."))
         return
 
-    st.markdown("#### Forecasts by Other Institutions")
+    st.markdown(f"#### {tr('Forecasts by Other Institutions')}")
 
     options = sorted(
         forecasts["vintage_label"].dropna().unique(),
@@ -3536,15 +3561,15 @@ def render_forecaster_forecast_section() -> None:
 
     controls = st.columns([2, 1])
     selected_vintages = controls[0].multiselect(
-        "Forecaster and forecast period",
+        tr("Forecaster and forecast period"),
         options,
         default=default_options,
-        help="Each option combines one forecaster and the period when that forecast was made.",
+        help=tr("Each option combines one forecaster and the period when that forecast was made."),
     )
-    show_table = controls[1].checkbox("Show forecast table", value=False)
+    show_table = controls[1].checkbox(tr("Show forecast table"), value=False)
 
     if not selected_vintages:
-        st.info("Select at least one forecaster-period pair.")
+        st.info(tr("Select at least one forecaster-period pair."))
         return
 
     selected = forecasts[forecasts["vintage_label"].isin(selected_vintages)].copy()
@@ -3553,15 +3578,17 @@ def render_forecaster_forecast_section() -> None:
         with column:
             fig = build_forecaster_figure(selected, indicator)
             if fig is None:
-                st.info(f"No available forecast for {indicator}.")
+                st.info(f"{tr('No available forecast for')} {tr(indicator)}.")
                 continue
             render_expandable_plotly(
                 fig,
                 key=f"forecaster_forecast_{slugify(indicator)}",
-                title=indicator,
+                title=tr(indicator),
                 expanded_height=760,
                 compact=True,
             )
+
+    render_forecaster_abbreviation_note()
 
     if show_table:
         table = selected.pivot_table(
@@ -3572,6 +3599,35 @@ def render_forecaster_forecast_section() -> None:
         ).reset_index()
         table.columns = [str(column) for column in table.columns]
         st.dataframe(table, use_container_width=True, hide_index=True)
+
+
+def render_forecaster_abbreviation_note() -> None:
+    abbreviations = [
+        ("BoM", "Bank of Mongolia", "Монголбанк"),
+        ("ADB", "Asian Development Bank", "Азийн хөгжлийн банк"),
+        ("WB", "World Bank", "Дэлхийн банк"),
+        ("IMF", "International Monetary Fund", "Олон улсын валютын сан"),
+        ("MED", "Ministry of Economic and Development", "Эдийн засаг, хөгжлийн яам"),
+    ]
+    is_mn = current_lang() == "mn"
+    chips = []
+    for code, english, mongolian in abbreviations:
+        meaning = mongolian if is_mn else english
+        color = FORECASTER_COLORS.get(code, "#98a2b3")
+        chips.append(
+            "<span class='weight-chip'>"
+            f"<span class='weight-dot' style='background:{color}'></span>"
+            f"<span class='weight-value'>{html.escape(code)}</span> - {html.escape(meaning)}"
+            "</span>"
+        )
+
+    st.markdown(
+        "<div class='weight-note'>"
+        f"<div class='weight-note-title'>{html.escape(tr('Abbreviations'))}</div>"
+        f"<div class='weight-chip-wrap'>{''.join(chips)}</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
 
 @st.cache_data(show_spinner=False)
@@ -3728,7 +3784,7 @@ def build_forecaster_figure(forecasts: pd.DataFrame, indicator: str) -> go.Figur
         margin=dict(l=10, r=10, t=26, b=16),
         hovermode="x unified",
         legend=dict(orientation="h", y=-0.24, x=0, title_text=""),
-        title=dict(text=f"{indicator}", font=dict(size=14), x=0),
+        title=dict(text=tr(indicator), font=dict(size=14), x=0),
     )
     fig.update_xaxes(title_text="", tickmode="linear", dtick=1, tickformat="d")
     unit = "Forecast"
