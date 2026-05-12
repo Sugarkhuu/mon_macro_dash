@@ -482,6 +482,17 @@ dq['hh_exp_yoy'] = pct(dq.hh_exp,-4)
 dm['ex_coal_vol_cum'] = dm['ex_coal_vol_cum']/1e3
 dm['ex_coal_cum'] = dm['ex_coal_cum']/1e6
 
+dq["ex_rest"] = dq.ex*1e3-(dq.ex_gold+dq.ex_copper+
+                      dq.ex_cashmere_raw+dq.ex_cashmere_comb+dq.ex_coal+dq.ex_oil)
+dq['ex_cashmere'] = dq.ex_cashmere_raw+dq.ex_cashmere_comb
+dq['ex_cashmere_vol'] = dq.ex_cashmere_raw_vol+dq.ex_cashmere_comb_vol
+dq["im_rest"] = dq.im*1e3-(dq.im_fuel+dq.im_veh+dq.im_truck+
+                  dq.im_elec+dq.im_comm)
+dm['im_ma'] = dm['im'].rolling(window=12, min_periods=1).mean()
+dm['fx_reserve_import_months'] = (dm['fx_reserve']/1e3)/dm['im_ma']
+dm['ms_m2_dc'] = dm['bank_liab_cur_mnt'] + dm['bank_liab_depo_dem_mnt'] + dm['bank_liab_depo_time_mnt']
+dm['ms_m2_fc'] = dm['bank_liab_cur_fx'] + dm['bank_liab_depo_dem_fx'] + dm['bank_liab_depo_time_fx']
+
 
 # Save the data file
 macro_data = [dd,dm,dq,dy]
