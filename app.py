@@ -3607,24 +3607,26 @@ def render_forecaster_abbreviation_note() -> None:
         ("ADB", "Asian Development Bank", "Азийн хөгжлийн банк"),
         ("WB", "World Bank", "Дэлхийн банк"),
         ("IMF", "International Monetary Fund", "Олон улсын валютын сан"),
-        ("MED", "Ministry of Economic and Development", "Эдийн засаг, хөгжлийн яам"),
+        ("MED", "Ministry of Economy and Development", "Эдийн засаг, хөгжлийн яам"),
     ]
+
     is_mn = current_lang() == "mn"
     chips = []
+
     for code, english, mongolian in abbreviations:
         meaning = mongolian if is_mn else english
         color = FORECASTER_COLORS.get(code, "#98a2b3")
         chips.append(
             "<span class='weight-chip'>"
             f"<span class='weight-dot' style='background:{color}'></span>"
-            f"<span class='weight-value'>{html.escape(code)}</span> - {html.escape(meaning)}"
+            f"<span class='weight-value'>{html.escape(code)}</span>"
+            f"&nbsp;{html.escape(meaning)}"
             "</span>"
         )
 
     st.markdown(
-        "<div class='weight-note'>"
-        f"<div class='weight-note-title'>{html.escape(tr('Abbreviations'))}</div>"
-        f"<div class='weight-chip-wrap'>{''.join(chips)}</div>"
+        "<div class='weight-chip-wrap' style='margin: -0.4rem 0 1.2rem 0;'>"
+        f"{''.join(chips)}"
         "</div>",
         unsafe_allow_html=True,
     )
