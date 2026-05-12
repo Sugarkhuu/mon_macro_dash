@@ -3463,6 +3463,7 @@ def render_forecast_section() -> None:
     st.subheader("Forecasts")
     render_forecaster_forecast_section()
 
+    st.markdown("#### Our Forecast")
     scenario = st.radio(
         "Scenario",
         list(SAMPLE_FORECASTS),
