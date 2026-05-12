@@ -21,6 +21,7 @@ from auth_utils import verify_password
 
 ROOT = Path(__file__).resolve().parent
 DATA_PICKLE = ROOT / "data" / "macro_data.pickle"
+FORECAST_4CASTERS_PATH = ROOT / "forecast_4casters.xlsx"
 FIGURE_DIR = ROOT / "figures"
 REPORT_DIRS = [ROOT / "output", ROOT / "report" / "table"]
 ANALYSIS_FORECAST_DIR = ROOT / "analysis_forecast"
@@ -1643,6 +1644,14 @@ LINE_COLORS = {
     "Non-food / food": "#7f7f7f",
     "Food / CPI": CPI_COMPONENT_COLORS["Food"],
     "Non-food / CPI": "#17becf",
+}
+
+FORECASTER_COLORS = {
+    "BoM": "#111827",
+    "MED": "#ff7f0e",
+    "IMF": "#1f77b4",
+    "ADB": "#2ca02c",
+    "WB": "#9467bd",
 }
 
 
@@ -3452,6 +3461,8 @@ def render_updates_section() -> None:
 
 def render_forecast_section() -> None:
     st.subheader("Forecasts")
+    render_forecaster_forecast_section()
+
     scenario = st.radio(
         "Scenario",
         list(SAMPLE_FORECASTS),
@@ -3503,6 +3514,229 @@ def render_forecast_section() -> None:
         empty_message="No forecast reports found.",
         key_prefix="forecast_report",
     )
+
+
+def render_forecaster_forecast_section() -> None:
+    forecasts = load_forecaster_forecasts(
+        str(FORECAST_4CASTERS_PATH),
+        file_mtime(FORECAST_4CASTERS_PATH),
+    )
+    if forecasts.empty:
+        st.info("No forecaster workbook found. Add `forecast_4casters.xlsx` to show forecast comparisons.")
+        return
+
+    st.markdown("#### Forecasts by Other Institutions")
+
+    options = sorted(
+        forecasts["vintage_label"].dropna().unique(),
+        key=forecast_vintage_sort_key,
+    )
+    default_options = default_forecast_vintages(forecasts)
+
+    controls = st.columns([2, 1])
+    selected_vintages = controls[0].multiselect(
+        "Forecaster and forecast period",
+        options,
+        default=default_options,
+        help="Each option combines one forecaster and the period when that forecast was made.",
+    )
+    show_table = controls[1].checkbox("Show forecast table", value=False)
+
+    if not selected_vintages:
+        st.info("Select at least one forecaster-period pair.")
+        return
+
+    selected = forecasts[forecasts["vintage_label"].isin(selected_vintages)].copy()
+    chart_cols = st.columns(3)
+    for column, indicator in zip(chart_cols, ["GDP (%)", "Inflation (%)", "USDMNT"]):
+        with column:
+            fig = build_forecaster_figure(selected, indicator)
+            if fig is None:
+                st.info(f"No available forecast for {indicator}.")
+                continue
+            render_expandable_plotly(
+                fig,
+                key=f"forecaster_forecast_{slugify(indicator)}",
+                title=indicator,
+                expanded_height=760,
+                compact=True,
+            )
+
+    if show_table:
+        table = selected.pivot_table(
+            index=["indicator", "forecast_period", "forecaster"],
+            columns="year",
+            values="value",
+            aggfunc="first",
+        ).reset_index()
+        table.columns = [str(column) for column in table.columns]
+        st.dataframe(table, use_container_width=True, hide_index=True)
+
+
+@st.cache_data(show_spinner=False)
+def load_forecaster_forecasts(path: str, _mtime: float) -> pd.DataFrame:
+    workbook_path = Path(path)
+    if not workbook_path.exists():
+        return pd.DataFrame(
+            columns=["indicator", "forecast_period", "year", "forecaster", "value", "vintage_label"]
+        )
+
+    records: list[dict[str, Any]] = []
+    workbook = pd.ExcelFile(workbook_path)
+    for sheet_name in workbook.sheet_names:
+        raw = pd.read_excel(workbook_path, sheet_name=sheet_name, header=None)
+        if raw.shape[0] < 3 or raw.shape[1] < 2:
+            continue
+
+        header_row = forecast_year_header_row(raw)
+        if header_row is None or header_row + 2 >= raw.shape[0]:
+            continue
+
+        years = raw.iloc[header_row, 1:].ffill()
+        forecasters = raw.iloc[header_row + 1, 1:]
+        data = raw.iloc[header_row + 2 :, :]
+
+        for row_index in data.index:
+            forecast_period = normalize_forecast_period(data.loc[row_index, 0])
+            if not forecast_period:
+                continue
+            for offset, column_index in enumerate(raw.columns[1:]):
+                year = normalize_forecast_year(years.iloc[offset])
+                forecaster = normalize_forecaster(forecasters.iloc[offset])
+                value = pd.to_numeric(data.loc[row_index, column_index], errors="coerce")
+                if year is None or not forecaster or pd.isna(value):
+                    continue
+                records.append(
+                    {
+                        "indicator": str(sheet_name),
+                        "forecast_period": forecast_period,
+                        "year": year,
+                        "forecaster": forecaster,
+                        "value": float(value),
+                        "vintage_label": f"{forecaster}-{forecast_period}",
+                    }
+                )
+
+    columns = ["indicator", "forecast_period", "year", "forecaster", "value", "vintage_label"]
+    return pd.DataFrame.from_records(records, columns=columns)
+
+
+def forecast_year_header_row(raw: pd.DataFrame) -> int | None:
+    for row_index in range(max(raw.shape[0] - 1, 0)):
+        year_count = 0
+        for value in raw.iloc[row_index, 1:]:
+            year = normalize_forecast_year(value)
+            if year is not None and 1900 <= year <= 2100:
+                year_count += 1
+        if year_count >= 2:
+            return row_index
+    return None
+
+
+def normalize_forecast_period(value: Any) -> str:
+    if pd.isna(value):
+        return ""
+    text = str(value).strip()
+    match = re.fullmatch(r"(\d{2,4})\s*[Mm]\s*(\d{1,2})", text)
+    if match:
+        year = int(match.group(1)) % 100
+        month = int(match.group(2))
+        return f"{year:02d}M{month:02d}"
+    return text
+
+
+def normalize_forecast_year(value: Any) -> int | None:
+    if pd.isna(value):
+        return None
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        match = re.search(r"\d{4}", str(value))
+        return int(match.group()) if match else None
+
+
+def normalize_forecaster(value: Any) -> str:
+    if pd.isna(value):
+        return ""
+    text = str(value).strip()
+    if not text:
+        return ""
+    aliases = {"BOM": "BoM", "MED": "MED", "IMF": "IMF", "ADB": "ADB", "WB": "WB"}
+    return aliases.get(text.upper(), text)
+
+
+def forecast_vintage_sort_key(label: str) -> tuple[int, int, str]:
+    forecaster, _, period = label.partition("-")
+    match = re.fullmatch(r"(\d{2})M(\d{2})", period)
+    if not match:
+        return (0, 0, forecaster)
+    year = 2000 + int(match.group(1))
+    month = int(match.group(2))
+    return (year, month, forecaster)
+
+
+def default_forecast_vintages(forecasts: pd.DataFrame) -> list[str]:
+    if forecasts.empty:
+        return []
+
+    latest_by_forecaster = (
+        forecasts[["forecaster", "forecast_period", "vintage_label"]]
+        .drop_duplicates()
+        .sort_values("vintage_label", key=lambda series: series.map(forecast_vintage_sort_key))
+        .groupby("forecaster", sort=True)
+        .tail(1)
+    )
+    defaults = sorted(latest_by_forecaster["vintage_label"].tolist(), key=forecast_vintage_sort_key)
+    return defaults if defaults else forecasts["vintage_label"].drop_duplicates().tail(5).tolist()
+
+
+def build_forecaster_figure(forecasts: pd.DataFrame, indicator: str) -> go.Figure | None:
+    frame = forecasts[forecasts["indicator"].eq(indicator)].copy()
+    if frame.empty:
+        return None
+
+    frame = frame.sort_values(["forecaster", "forecast_period", "year"])
+    fig = go.Figure()
+    dash_styles = ["solid", "dash", "dot", "dashdot", "longdash"]
+    vintage_order = {
+        label: index
+        for index, label in enumerate(
+            sorted(frame["vintage_label"].dropna().unique(), key=forecast_vintage_sort_key)
+        )
+    }
+
+    for label, group in frame.groupby("vintage_label", sort=False):
+        forecaster = str(group["forecaster"].iloc[0])
+        color = FORECASTER_COLORS.get(forecaster, chart_color(forecaster, "line") or "#475467")
+        dash = dash_styles[vintage_order.get(label, 0) % len(dash_styles)]
+        fig.add_trace(
+            go.Scatter(
+                x=group["year"],
+                y=group["value"],
+                mode="lines+markers",
+                name=label,
+                line=dict(color=color, width=2.4, dash=dash),
+                marker=dict(size=7, color=color),
+                hovertemplate="%{x}: %{y:,.2f}<extra>" + html.escape(label) + "</extra>",
+            )
+        )
+
+    fig.update_layout(
+        template="plotly_white",
+        height=360,
+        margin=dict(l=10, r=10, t=26, b=16),
+        hovermode="x unified",
+        legend=dict(orientation="h", y=-0.24, x=0, title_text=""),
+        title=dict(text=f"{indicator}", font=dict(size=14), x=0),
+    )
+    fig.update_xaxes(title_text="", tickmode="linear", dtick=1, tickformat="d")
+    unit = "Forecast"
+    if indicator in {"GDP (%)", "Inflation (%)"}:
+        unit = "%"
+    elif indicator == "USDMNT":
+        unit = "MNT per USD"
+    fig.update_yaxes(title_text=unit, zeroline=False)
+    return fig
 
 
 def render_data_explorer(macro_data: dict[str, pd.DataFrame]) -> None:
