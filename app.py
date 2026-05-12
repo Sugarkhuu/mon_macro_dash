@@ -981,33 +981,183 @@ PLOTLY_MACRO_SECTIONS = {
     ],
     "Fiscal Sector": [
         {
-            "title": "Budget Balance",
-            "dataset": "Quarterly",
-            "unit": "tn MNT",
-            "bars": [
-                {"column": "gov_rev_eq", "label": "Revenue", "scale": 0.001},
-                {"column": "gov_exp", "label": "Expenditure", "scale": -0.001},
-            ],
-            "lines": [
-                {"columns_sum": ["gov_rev_eq"], "minus_columns": ["gov_exp"], "label": "Balance", "scale": 0.001}
+            "title": "Budget Balance and Revenue",
+            "subsection": "Budget Balance",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Budget balance",
+                    "dataset": "Quarterly",
+                    "unit": "tn MNT",
+                    "bars": [
+                        {"column": "gov_rev_eq", "label": "Revenue", "scale": 0.001},
+                        {"column": "gov_exp", "label": "Expenditure", "scale": -0.001},
+                    ],
+                    "lines": [
+                        {"columns_sum": ["gov_rev_eq"], "minus_columns": ["gov_exp"], "label": "Balance", "scale": 0.001}
+                    ],
+                },
+                {
+                    "title": "Budget balance (% of GDP)",
+                    "dataset": "Yearly",
+                    "unit": "% of GDP",
+                    "bars": [
+                        {"column": "gov_rev_eq", "denominator": "gdp_nom", "label": "Revenue", "transform": "ratio", "scale": 1000},
+                        {"column": "gov_exp", "denominator": "gdp_nom", "label": "Expenditure", "transform": "ratio", "scale": -1000},
+                    ],
+                    "lines": [
+                        {"columns_sum": ["gov_rev_eq"], "minus_columns": ["gov_exp"], "denominator": "gdp_nom", "label": "Balance", "transform": "ratio", "scale": 1000}
+                    ],
+                },
+                {
+                    "title": "Total revenue (% of GDP)",
+                    "dataset": "Quarterly",
+                    "unit": "% of GDP",
+                    "bars": [
+                        {"column": "gov_rev_cur_tax", "denominator": "gdp_nom_y", "label": "Tax revenue", "transform": "ratio", "scale": 1000},
+                        {"column": "gov_rev_cur_nontax", "denominator": "gdp_nom_y", "label": "Non-tax revenue", "transform": "ratio", "scale": 1000},
+                        {"column": "gov_rev_cap", "denominator": "gdp_nom_y", "label": "Capital revenue", "transform": "ratio", "scale": 1000},
+                        {"column": "gov_rev_grant", "denominator": "gdp_nom_y", "label": "Grants", "transform": "ratio", "scale": 1000},
+                    ],
+                    "lines": [
+                        {"column": "gov_rev_eq", "denominator": "gdp_nom_y", "label": "Total revenue", "transform": "ratio", "scale": 1000}
+                    ],
+                },
+                {
+                    "title": "Tax revenue (% of GDP)",
+                    "dataset": "Quarterly",
+                    "unit": "% of GDP",
+                    "bars": [
+                        {"column": "gov_rev_corp_nso", "denominator": "gdp_nom_y", "label": "Corporate income tax", "transform": "ratio"},
+                        {"column": "gov_rev_ind_nso", "denominator": "gdp_nom_y", "label": "Personal income tax", "transform": "ratio"},
+                        {"column": "gov_rev_ssc_nso", "denominator": "gdp_nom_y", "label": "Social security contributions", "transform": "ratio"},
+                        {"column": "gov_rev_vat_nso", "denominator": "gdp_nom_y", "label": "VAT", "transform": "ratio"},
+                        {"column": "gov_rev_spectax_nso", "denominator": "gdp_nom_y", "label": "Excise tax", "transform": "ratio"},
+                    ],
+                    "lines": [
+                        {"column": "gov_rev_cur_tax", "denominator": "gdp_nom_y", "label": "Tax revenue", "transform": "ratio", "scale": 1000}
+                    ],
+                },
             ],
         },
         {
-            "title": "Fiscal Ratios",
-            "dataset": "Quarterly",
-            "unit": "% of GDP",
-            "lines": [
-                {"column": "gov_rev_eq", "denominator": "gdp_nom_y", "label": "Revenue / GDP", "transform": "ratio", "scale": 1000},
-                {"column": "gov_exp", "denominator": "gdp_nom_y", "label": "Expenditure / GDP", "transform": "ratio", "scale": 1000},
-            ],
-        },
-        {
-            "title": "Budget Growth",
-            "dataset": "Monthly",
-            "unit": "%",
-            "lines": [
-                {"column": "gov_rev_cum", "label": "Revenue YoY", "transform": "yoy", "lag": 12},
-                {"column": "gov_exp_cum", "label": "Expenditure YoY", "transform": "yoy", "lag": 12},
+            "title": "Budget Expenditure",
+            "subsection": "Budget Expenditure",
+            "layout": "2x2",
+            "charts": [
+                {
+                    "title": "Total expenditure (% of GDP)",
+                    "dataset": "Quarterly",
+                    "unit": "% of GDP",
+                    "bars": [
+                        {"column": "gov_exp_cur", "denominator": "gdp_nom_y", "label": "Current expenditure", "transform": "ratio", "scale": 1000},
+                        {"column": "gov_exp_cap", "denominator": "gdp_nom_y", "label": "Capital expenditure", "transform": "ratio", "scale": 1000},
+                        {"column": "gov_exp_netloan", "denominator": "gdp_nom_y", "label": "Net lending", "transform": "ratio", "scale": 1000},
+                    ],
+                    "lines": [
+                        {"column": "gov_exp", "denominator": "gdp_nom_y", "label": "Total expenditure", "transform": "ratio", "scale": 1000}
+                    ],
+                },
+                {
+                    "title": "Current expenditure (% of GDP)",
+                    "dataset": "Quarterly",
+                    "unit": "% of GDP",
+                    "bars": [
+                        {"column": "gov_exp_cur_subtran_nso", "denominator": "gdp_nom_y", "label": "Subsidies and transfers", "transform": "ratio"},
+                        {"column": "gov_exp_cur_sal_nso", "denominator": "gdp_nom_y", "label": "Wages and salaries", "transform": "ratio"},
+                        {"column": "gov_exp_cur_goods_nso", "denominator": "gdp_nom_y", "label": "Goods and services", "transform": "ratio"},
+                        {"column": "gov_exp_cur_int_nso", "denominator": "gdp_nom_y", "label": "Interest payments", "transform": "ratio"},
+                    ],
+                    "lines": [
+                        {
+                            "columns_sum": [
+                                "gov_exp_cur_subtran_nso",
+                                "gov_exp_cur_sal_nso",
+                                "gov_exp_cur_goods_nso",
+                                "gov_exp_cur_int_nso",
+                            ],
+                            "denominator": "gdp_nom_y",
+                            "label": "Current expenditure",
+                            "transform": "ratio",
+                        }
+                    ],
+                },
+                {
+                    "title": "Total expenditure composition",
+                    "dataset": "Quarterly",
+                    "unit": "%",
+                    "bars": [
+                        {
+                            "column": "gov_exp_cur",
+                            "denominator_sum": ["gov_exp_cur", "gov_exp_cap", "gov_exp_netloan"],
+                            "label": "Current expenditure",
+                            "transform": "ratio",
+                        },
+                        {
+                            "column": "gov_exp_cap",
+                            "denominator_sum": ["gov_exp_cur", "gov_exp_cap", "gov_exp_netloan"],
+                            "label": "Capital expenditure",
+                            "transform": "ratio",
+                        },
+                        {
+                            "column": "gov_exp_netloan",
+                            "denominator_sum": ["gov_exp_cur", "gov_exp_cap", "gov_exp_netloan"],
+                            "label": "Net lending",
+                            "transform": "ratio",
+                        },
+                    ],
+                },
+                {
+                    "title": "Current expenditure composition",
+                    "dataset": "Quarterly",
+                    "unit": "%",
+                    "bars": [
+                        {
+                            "column": "gov_exp_cur_subtran_nso",
+                            "denominator_sum": [
+                                "gov_exp_cur_subtran_nso",
+                                "gov_exp_cur_sal_nso",
+                                "gov_exp_cur_goods_nso",
+                                "gov_exp_cur_int_nso",
+                            ],
+                            "label": "Subsidies and transfers",
+                            "transform": "ratio",
+                        },
+                        {
+                            "column": "gov_exp_cur_sal_nso",
+                            "denominator_sum": [
+                                "gov_exp_cur_subtran_nso",
+                                "gov_exp_cur_sal_nso",
+                                "gov_exp_cur_goods_nso",
+                                "gov_exp_cur_int_nso",
+                            ],
+                            "label": "Wages and salaries",
+                            "transform": "ratio",
+                        },
+                        {
+                            "column": "gov_exp_cur_goods_nso",
+                            "denominator_sum": [
+                                "gov_exp_cur_subtran_nso",
+                                "gov_exp_cur_sal_nso",
+                                "gov_exp_cur_goods_nso",
+                                "gov_exp_cur_int_nso",
+                            ],
+                            "label": "Goods and services",
+                            "transform": "ratio",
+                        },
+                        {
+                            "column": "gov_exp_cur_int_nso",
+                            "denominator_sum": [
+                                "gov_exp_cur_subtran_nso",
+                                "gov_exp_cur_sal_nso",
+                                "gov_exp_cur_goods_nso",
+                                "gov_exp_cur_int_nso",
+                            ],
+                            "label": "Interest payments",
+                            "transform": "ratio",
+                        },
+                    ],
+                },
             ],
         },
     ],
@@ -1058,6 +1208,13 @@ Policy, interbank, deposit, and lending rates frame domestic financial
 conditions. Money supply, bank balance sheet indicators, and credit
 quality show how liquidity and financial intermediation are evolving
 across households, firms, and currency segments.
+""",
+
+    "Fiscal Sector": """
+Fiscal indicators track the budget balance, revenue mobilization,
+spending pressure, and expenditure composition. Revenue and expenditure
+ratios are shown against GDP to make fiscal stance and structural
+changes easier to compare through time.
 """,
 }
 
@@ -1352,6 +1509,43 @@ TRANSLATIONS_MN.update(
         "Corporate": "Байгууллага",
         "MNT credit": "Төгрөгийн зээл",
         "FX credit": "Валютын зээл",
+    }
+)
+
+TRANSLATIONS_MN.update(
+    {
+        "Budget Balance and Revenue": "Төсвийн тэнцэл ба орлого",
+        "Budget Balance": "Төсвийн тэнцэл",
+        "Budget Expenditure": "Төсвийн зарлага",
+        "Budget balance": "Төсвийн тэнцэл",
+        "Budget balance (% of GDP)": "Төсвийн тэнцэл (% ДНБ)",
+        "Total revenue (% of GDP)": "Нийт орлого (% ДНБ)",
+        "Tax revenue (% of GDP)": "Татварын орлого (% ДНБ)",
+        "Total expenditure (% of GDP)": "Нийт зарлага (% ДНБ)",
+        "Current expenditure (% of GDP)": "Урсгал зарлага (% ДНБ)",
+        "Total expenditure composition": "Нийт зарлагын бүтэц",
+        "Current expenditure composition": "Урсгал зарлагын бүтэц",
+        "Revenue": "Орлого",
+        "Expenditure": "Зарлага",
+        "Balance": "Тэнцэл",
+        "Revenue / GDP": "Орлого / ДНБ",
+        "Expenditure / GDP": "Зарлага / ДНБ",
+        "Tax revenue": "Татварын орлого",
+        "Non-tax revenue": "Татварын бус орлого",
+        "Capital revenue": "Хөрөнгийн орлого",
+        "Grants": "Тусламж",
+        "Total revenue": "Нийт орлого",
+        "Corporate income tax": "Аж ахуйн нэгжийн орлогын албан татвар",
+        "Personal income tax": "Хувь хүний орлогын албан татвар",
+        "Social security contributions": "Нийгмийн даатгалын шимтгэл",
+        "VAT": "НӨАТ",
+        "Excise tax": "Онцгой албан татвар",
+        "Current expenditure": "Урсгал зарлага",
+        "Capital expenditure": "Хөрөнгийн зарлага",
+        "Net lending": "Цэвэр зээл",
+        "Subsidies and transfers": "Татаас ба шилжүүлэг",
+        "Wages and salaries": "Цалин хөлс",
+        "Interest payments": "Хүүний төлбөр",
     }
 )
 
@@ -2352,6 +2546,13 @@ def base_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series |
 
 
 def denominator_series(frame: pd.DataFrame, series_spec: dict[str, Any]) -> pd.Series | None:
+    denominator_columns = [str(column) for column in series_spec.get("denominator_sum", [])]
+    if denominator_columns:
+        existing = [column for column in denominator_columns if column in frame.columns]
+        if not existing:
+            return None
+        return frame[existing].apply(pd.to_numeric, errors="coerce").sum(axis=1, min_count=1)
+
     denominator = str(series_spec.get("denominator") or "")
     if denominator not in frame.columns:
         return None
